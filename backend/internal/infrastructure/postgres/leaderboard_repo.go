@@ -1,0 +1,195 @@
+package postgres
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+
+	"wc2026/internal/domain"
+	"wc2026/internal/domain/leaderboard"
+)
+
+type LeaderboardRepo struct {
+	db *sql.DB
+}
+
+func NewLeaderboardRepo(db *sql.DB) *LeaderboardRepo {
+	return &LeaderboardRepo{db: db}
+}
+
+func (r *LeaderboardRepo) Create(ctx context.Context, lb *leaderboard.Leaderboard) error {
+	query := `
+		INSERT INTO leaderboards (id, name, created_by, created_at)
+		VALUES ($1, $2, $3, $4)
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		lb.ID,
+		lb.Name,
+		lb.CreatedBy,
+		lb.CreatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("creating leaderboard: %w", err)
+	}
+
+	return nil
+}
+
+func (r *LeaderboardRepo) GetByID(ctx context.Context, id string) (*leaderboard.Leaderboard, error) {
+	query := `
+		SELECT id, name, created_by, created_at
+		FROM leaderboards
+		WHERE id = $1
+	`
+
+	var lb leaderboard.Leaderboard
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&lb.ID,
+		&lb.Name,
+		&lb.CreatedBy,
+		&lb.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("getting leaderboard by id %s: %w", id, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("getting leaderboard by id %s: %w", id, err)
+	}
+
+	return &lb, nil
+}
+
+func (r *LeaderboardRepo) ListByUser(ctx context.Context, userID string) ([]*leaderboard.Leaderboard, error) {
+	query := `
+		SELECT l.id, l.name, l.created_by, l.created_at
+		FROM leaderboards l
+		JOIN leaderboard_members lm ON l.id = lm.leaderboard_id
+		WHERE lm.user_id = $1
+		ORDER BY l.created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("listing leaderboards for user %s: %w", userID, err)
+	}
+	defer rows.Close()
+
+	var leaderboards []*leaderboard.Leaderboard
+	for rows.Next() {
+		var lb leaderboard.Leaderboard
+		err := rows.Scan(
+			&lb.ID,
+			&lb.Name,
+			&lb.CreatedBy,
+			&lb.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning leaderboard: %w", err)
+		}
+
+		leaderboards = append(leaderboards, &lb)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating leaderboards: %w", err)
+	}
+
+	return leaderboards, nil
+}
+
+func (r *LeaderboardRepo) AddMember(ctx context.Context, m *leaderboard.Member) error {
+	query := `
+		INSERT INTO leaderboard_members (id, leaderboard_id, user_id, role, joined_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		m.ID,
+		m.LeaderboardID,
+		m.UserID,
+		m.Role,
+		m.JoinedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("adding member to leaderboard: %w", err)
+	}
+
+	return nil
+}
+
+func (r *LeaderboardRepo) GetMember(ctx context.Context, leaderboardID, userID string) (*leaderboard.Member, error) {
+	query := `
+		SELECT id, leaderboard_id, user_id, role, joined_at
+		FROM leaderboard_members
+		WHERE leaderboard_id = $1 AND user_id = $2
+	`
+
+	var m leaderboard.Member
+	err := r.db.QueryRowContext(ctx, query, leaderboardID, userID).Scan(
+		&m.ID,
+		&m.LeaderboardID,
+		&m.UserID,
+		&m.Role,
+		&m.JoinedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("getting member for leaderboard %s user %s: %w", leaderboardID, userID, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("getting member for leaderboard %s user %s: %w", leaderboardID, userID, err)
+	}
+
+	return &m, nil
+}
+
+func (r *LeaderboardRepo) GetScores(ctx context.Context, leaderboardID string) ([]*leaderboard.Score, error) {
+	query := `
+		SELECT u.id, u.name, COUNT(*) AS points
+		FROM predictions p
+		JOIN matches m ON p.match_id = m.id
+		JOIN leaderboard_members lm
+		  ON lm.user_id = p.user_id AND lm.leaderboard_id = $1
+		JOIN users u ON u.id = p.user_id
+		WHERE m.status = 'finished'
+		  AND (
+		    (m.home_score > m.away_score AND p.value = 'home_win') OR
+		    (m.home_score = m.away_score AND p.value = 'draw')     OR
+		    (m.home_score < m.away_score AND p.value = 'away_win')
+		  )
+		GROUP BY u.id, u.name
+		ORDER BY points DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, leaderboardID)
+	if err != nil {
+		return nil, fmt.Errorf("getting scores for leaderboard %s: %w", leaderboardID, err)
+	}
+	defer rows.Close()
+
+	var scores []*leaderboard.Score
+	for rows.Next() {
+		var s leaderboard.Score
+		err := rows.Scan(
+			&s.UserID,
+			&s.Name,
+			&s.Points,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning score: %w", err)
+		}
+
+		scores = append(scores, &s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating scores: %w", err)
+	}
+
+	return scores, nil
+}
