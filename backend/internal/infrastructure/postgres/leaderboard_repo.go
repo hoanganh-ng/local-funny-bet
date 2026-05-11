@@ -158,9 +158,9 @@ func (r *LeaderboardRepo) GetScores(ctx context.Context, leaderboardID string) (
 		JOIN users u ON u.id = p.user_id
 		WHERE m.status = 'finished'
 		  AND (
-		    (m.home_score > m.away_score AND p.value = 'home_win') OR
-		    (m.home_score = m.away_score AND p.value = 'draw')     OR
-		    (m.home_score < m.away_score AND p.value = 'away_win')
+		    (m.home_score > m.away_score AND p.value = 'home') OR
+		    (m.home_score = m.away_score AND p.value = 'draw') OR
+		    (m.home_score < m.away_score AND p.value = 'away')
 		  )
 		GROUP BY u.id, u.name
 		ORDER BY points DESC
@@ -192,4 +192,38 @@ func (r *LeaderboardRepo) GetScores(ctx context.Context, leaderboardID string) (
 	}
 
 	return scores, nil
+}
+
+func (r *LeaderboardRepo) GetAffectedByMatches(ctx context.Context, matchIDs []string) ([]string, error) {
+	if len(matchIDs) == 0 {
+		return []string{}, nil
+	}
+
+	query := `
+		SELECT DISTINCT lm.leaderboard_id
+		FROM leaderboard_members lm
+		JOIN predictions p ON p.user_id = lm.user_id
+		WHERE p.match_id = ANY($1)
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, matchIDs)
+	if err != nil {
+		return nil, fmt.Errorf("getting affected leaderboards: %w", err)
+	}
+	defer rows.Close()
+
+	var leaderboardIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scanning leaderboard id: %w", err)
+		}
+		leaderboardIDs = append(leaderboardIDs, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating leaderboard ids: %w", err)
+	}
+
+	return leaderboardIDs, nil
 }

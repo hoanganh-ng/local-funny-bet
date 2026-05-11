@@ -9,4 +9,5 @@ type Repository interface {
 	AddMember(ctx context.Context, m *Member) error
 	GetMember(ctx context.Context, leaderboardID, userID string) (*Member, error)
 	GetScores(ctx context.Context, leaderboardID string) ([]*Score, error)
+	GetAffectedByMatches(ctx context.Context, matchIDs []string) ([]string, error)
 }

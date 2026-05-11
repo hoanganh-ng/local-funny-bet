@@ -10,8 +10,11 @@ import (
 	"time"
 
 	"wc2026/internal/adapters/scheduler"
+	"wc2026/internal/adapters/ws"
 	"wc2026/internal/application/auth"
+	leaderboardApp "wc2026/internal/application/leaderboard"
 	"wc2026/internal/application/match"
+	predictionApp "wc2026/internal/application/prediction"
 	"wc2026/internal/config"
 	"wc2026/internal/infrastructure/football"
 	"wc2026/internal/infrastructure/google"
@@ -33,6 +36,8 @@ func main() {
 
 	userRepo := postgres.NewUserRepo(db)
 	matchRepo := postgres.NewMatchRepo(db)
+	predictionRepo := postgres.NewPredictionRepo(db)
+	leaderboardRepo := postgres.NewLeaderboardRepo(db)
 
 	googleProvider := google.NewProvider(
 		cfg.GoogleClientID,
@@ -44,12 +49,21 @@ func main() {
 	footballClient := football.NewClient(cfg.FootballAPIKey)
 
 	tokenSigner := jwt.NewSigner(cfg.JWTSecret)
+	tokenVerifier := jwt.NewVerifier(cfg.JWTSecret)
+
+	hub := ws.NewHub()
+	go hub.Run()
 
 	authService := auth.NewService(userRepo, googleProvider, tokenSigner, cfg.JWTRefreshSecret)
-	matchService := match.NewService(matchRepo, footballClient)
+	matchService := match.NewService(matchRepo, footballClient, leaderboardRepo, hub)
+	predictionService := predictionApp.NewService(predictionRepo, matchRepo, leaderboardRepo)
+	leaderboardService := leaderboardApp.NewService(leaderboardRepo, cfg.JWTSecret)
 
 	authHandler := httpAdapters.NewAuthHandler(authService)
 	matchHandler := httpAdapters.NewMatchHandler(matchService)
+	predictionHandler := httpAdapters.NewPredictionHandler(predictionService)
+	leaderboardHandler := httpAdapters.NewLeaderboardHandler(leaderboardService)
+	wsHandler := httpAdapters.NewWebSocketHandler(hub)
 
 	mux := http.NewServeMux()
 
@@ -59,6 +73,18 @@ func main() {
 
 	mux.HandleFunc("GET /matches", matchHandler.ListMatches)
 	mux.HandleFunc("GET /matches/{id}", matchHandler.GetMatch)
+
+	mux.HandleFunc("GET /ws", wsHandler.Handle)
+
+	mux.HandleFunc("GET /leaderboards/{id}", leaderboardHandler.GetLeaderboard)
+
+	authMiddleware := middleware.RequireAuth(tokenVerifier)
+	mux.Handle("PUT /predictions", authMiddleware(http.HandlerFunc(predictionHandler.UpsertPrediction)))
+	mux.Handle("GET /leaderboards/{lbID}/matches/{matchID}/predictions", authMiddleware(http.HandlerFunc(predictionHandler.ListPredictions)))
+	mux.Handle("POST /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.CreateLeaderboard)))
+	mux.Handle("GET /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.ListLeaderboards)))
+	mux.Handle("POST /leaderboards/{id}/invite", authMiddleware(http.HandlerFunc(leaderboardHandler.GenerateInvite)))
+	mux.Handle("POST /leaderboards/join", authMiddleware(http.HandlerFunc(leaderboardHandler.JoinLeaderboard)))
 
 	handler := middleware.Logger(
 		middleware.CORS(cfg.CORSOrigin)(mux),

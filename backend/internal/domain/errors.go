@@ -6,4 +6,5 @@ var (
 	ErrNotFound      = errors.New("not found")
 	ErrUnauthorized  = errors.New("unauthorized")
 	ErrAlreadyExists = errors.New("already exists")
+	ErrLocked        = errors.New("resource locked")
 )
