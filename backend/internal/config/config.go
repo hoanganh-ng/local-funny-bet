@@ -11,9 +11,11 @@ type Config struct {
 	JWTRefreshSecret    string
 	GoogleClientID      string
 	GoogleClientSecret  string
+	GoogleRedirectURL   string
 	FootballAPIKey      string
 	AllowedEmailDomains []string
 	Port                string
+	CORSOrigin          string
 }
 
 func LoadConfig() *Config {
@@ -31,14 +33,26 @@ func LoadConfig() *Config {
 		}
 	}
 
+	corsOrigin := os.Getenv("CORS_ORIGIN")
+	if corsOrigin == "" {
+		corsOrigin = "*"
+	}
+
+	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
+	if googleRedirectURL == "" {
+		googleRedirectURL = "http://localhost:8080/auth/callback/google"
+	}
+
 	return &Config{
 		DatabaseURL:         os.Getenv("DATABASE_URL"),
 		JWTSecret:           os.Getenv("JWT_SECRET"),
 		JWTRefreshSecret:    os.Getenv("JWT_REFRESH_SECRET"),
 		GoogleClientID:      os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret:  os.Getenv("GOOGLE_CLIENT_SECRET"),
+		GoogleRedirectURL:   googleRedirectURL,
 		FootballAPIKey:      os.Getenv("FOOTBALL_API_KEY"),
 		AllowedEmailDomains: domains,
 		Port:                port,
+		CORSOrigin:          corsOrigin,
 	}
 }

@@ -107,3 +107,33 @@ func (r *UserRepo) Create(ctx context.Context, u *user.User) error {
 
 	return nil
 }
+
+func (r *UserRepo) Upsert(ctx context.Context, u *user.User) error {
+	query := `
+		INSERT INTO users (id, email, name, avatar_url, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (email) DO UPDATE SET
+			name = EXCLUDED.name,
+			avatar_url = EXCLUDED.avatar_url
+		RETURNING id, created_at
+	`
+
+	var avatarURL sql.NullString
+	if u.AvatarURL != nil {
+		avatarURL = sql.NullString{String: *u.AvatarURL, Valid: true}
+	}
+
+	err := r.db.QueryRowContext(ctx, query,
+		u.ID,
+		u.Email,
+		u.Name,
+		avatarURL,
+		u.CreatedAt,
+	).Scan(&u.ID, &u.CreatedAt)
+
+	if err != nil {
+		return fmt.Errorf("upserting user: %w", err)
+	}
+
+	return nil
+}
