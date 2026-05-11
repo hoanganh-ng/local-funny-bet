@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "FOOTBALL_API_KEY=${{ secrets.FOOTBALL_API_KEY }}" >> .env
+          echo "ALLOWED_EMAIL_DOMAINS=${{ secrets.ALLOWED_EMAIL_DOMAINS }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+
+      - name: Build images
+        run: docker-compose build
+
+      - name: Stop existing containers
+        run: docker-compose down
+
+      - name: Start containers
+        run: docker-compose up -d
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://localhost:8080/health || exit 1
+          curl -f http://localhost/ || exit 1
