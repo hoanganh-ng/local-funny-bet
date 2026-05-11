@@ -7,36 +7,48 @@ import (
 	"net/http"
 
 	"wc2026/internal/domain"
+	"wc2026/internal/middleware"
 )
 
 type AuthService interface {
+	GetAuthURL(state string) string
 	HandleGoogleCallback(ctx context.Context, code string) (accessToken, refreshToken string, err error)
+	GetUserByID(ctx context.Context, userID string) (id, email, name string, avatarURL *string, err error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, error)
 	RevokeToken(ctx context.Context, refreshToken string) error
 }
 
 type AuthHandler struct {
-	service AuthService
+	service     AuthService
+	frontendURL string
 }
 
-func NewAuthHandler(service AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthHandler(service AuthService, frontendURL string) *AuthHandler {
+	return &AuthHandler{
+		service:     service,
+		frontendURL: frontendURL,
+	}
+}
+
+func (h *AuthHandler) InitiateGoogleLogin(w http.ResponseWriter, r *http.Request) {
+	authURL := h.service.GetAuthURL("random-state")
+	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		respondError(w, http.StatusBadRequest, "missing code parameter")
+		http.Redirect(w, r, h.frontendURL+"/login?error=missing_code", http.StatusTemporaryRedirect)
 		return
 	}
 
 	accessToken, refreshToken, err := h.service.HandleGoogleCallback(r.Context(), code)
 	if err != nil {
 		if errors.Is(err, domain.ErrUnauthorized) {
-			respondError(w, http.StatusUnauthorized, "unauthorized")
+			http.Redirect(w, r, h.frontendURL+"/login?error=unauthorized", http.StatusTemporaryRedirect)
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "internal server error")
+		http.Redirect(w, r, h.frontendURL+"/login?error=server_error", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -50,9 +62,8 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	respondJSON(w, http.StatusOK, map[string]string{
-		"access_token": accessToken,
-	})
+	redirectURL := fmt.Sprintf("%s/auth/callback?token=%s", h.frontendURL, accessToken)
+	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +81,27 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, http.StatusOK, map[string]string{
 		"access_token": accessToken,
+	})
+}
+
+func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	id, email, name, avatarURL, err := h.service.GetUserByID(r.Context(), userID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"id":         id,
+		"email":      email,
+		"name":       name,
+		"avatar_url": avatarURL,
 	})
 }
 

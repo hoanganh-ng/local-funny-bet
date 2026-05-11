@@ -59,7 +59,7 @@ func main() {
 	predictionService := predictionApp.NewService(predictionRepo, matchRepo, leaderboardRepo)
 	leaderboardService := leaderboardApp.NewService(leaderboardRepo, cfg.JWTSecret)
 
-	authHandler := httpAdapters.NewAuthHandler(authService)
+	authHandler := httpAdapters.NewAuthHandler(authService, cfg.FrontendURL)
 	matchHandler := httpAdapters.NewMatchHandler(matchService)
 	predictionHandler := httpAdapters.NewPredictionHandler(predictionService)
 	leaderboardHandler := httpAdapters.NewLeaderboardHandler(leaderboardService)
@@ -67,6 +67,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /auth/google", authHandler.InitiateGoogleLogin)
 	mux.HandleFunc("GET /auth/callback/google", authHandler.HandleGoogleCallback)
 	mux.HandleFunc("POST /auth/refresh", authHandler.RefreshToken)
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
@@ -79,6 +80,7 @@ func main() {
 	mux.HandleFunc("GET /leaderboards/{id}", leaderboardHandler.GetLeaderboard)
 
 	authMiddleware := middleware.RequireAuth(tokenVerifier)
+	mux.Handle("GET /auth/me", authMiddleware(http.HandlerFunc(authHandler.GetCurrentUser)))
 	mux.Handle("PUT /predictions", authMiddleware(http.HandlerFunc(predictionHandler.UpsertPrediction)))
 	mux.Handle("GET /leaderboards/{lbID}/matches/{matchID}/predictions", authMiddleware(http.HandlerFunc(predictionHandler.ListPredictions)))
 	mux.Handle("POST /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.CreateLeaderboard)))

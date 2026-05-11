@@ -36,6 +36,18 @@ func NewService(userRepo user.Repository, provider auth.Provider, tokenSigner au
 	}
 }
 
+func (s *Service) GetAuthURL(state string) string {
+	return s.provider.GetAuthURL(state)
+}
+
+func (s *Service) GetUserByID(ctx context.Context, userID string) (id, email, name string, avatarURL *string, err error) {
+	u, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return "", "", "", nil, err
+	}
+	return u.ID, u.Email, u.Name, u.AvatarURL, nil
+}
+
 func (s *Service) HandleGoogleCallback(ctx context.Context, code string) (accessToken, refreshTokenStr string, err error) {
 	userInfo, err := s.provider.VerifyToken(ctx, code)
 	if err != nil {

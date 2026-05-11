@@ -43,12 +43,31 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   if (to.path === '/auth/callback') {
     const token = to.query.token
     if (token) {
       const authStore = useAuthStore()
-      authStore.setAuth(token, {})
+
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (response.ok) {
+          const user = await response.json()
+          authStore.setAuth(token, user)
+        } else {
+          authStore.setAuth(token, {})
+        }
+      } catch (err) {
+        console.error('Failed to fetch user info:', err)
+        authStore.setAuth(token, {})
+      }
+
       next('/')
       return
     }

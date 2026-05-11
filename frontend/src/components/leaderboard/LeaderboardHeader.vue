@@ -71,7 +71,7 @@ const closeModal = () => {
     </BaseButton>
 
     <BaseModal
-      :show="showInviteModal"
+      :open="showInviteModal"
       title="Invite to Leaderboard"
       @close="closeModal"
     >

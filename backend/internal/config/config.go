@@ -1,6 +1,7 @@
 package config
 
 import (
+	"io"
 	"os"
 	"strings"
 )
@@ -16,9 +17,21 @@ type Config struct {
 	AllowedEmailDomains []string
 	Port                string
 	CORSOrigin          string
+	FrontendURL         string
 }
 
 func LoadConfig() *Config {
+	runningEnvironment := os.Getenv("APP_ENV")
+	if runningEnvironment == "" {
+		runningEnvironment = "local"
+	}
+	if runningEnvironment == "local" {
+		err := loadENVFromFile(".env.local")
+		if err != nil {
+			panic("failed to load .env.local file: " + err.Error())
+		}
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -40,7 +53,12 @@ func LoadConfig() *Config {
 
 	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 	if googleRedirectURL == "" {
-		googleRedirectURL = "http://localhost:8080/auth/callback/google"
+		googleRedirectURL = "http://localhost:8081/auth/callback/google"
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
 	}
 
 	return &Config{
@@ -54,5 +72,36 @@ func LoadConfig() *Config {
 		AllowedEmailDomains: domains,
 		Port:                port,
 		CORSOrigin:          corsOrigin,
+		FrontendURL:         frontendURL,
 	}
+}
+
+func loadENVFromFile(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var content []byte
+	content, err = io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		os.Setenv(key, value)
+	}
+
+	return nil
 }

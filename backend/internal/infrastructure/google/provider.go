@@ -41,6 +41,10 @@ func (p *Provider) Name() string {
 	return "google"
 }
 
+func (p *Provider) GetAuthURL(state string) string {
+	return p.config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+}
+
 func (p *Provider) VerifyToken(ctx context.Context, code string) (*auth.UserInfo, error) {
 	token, err := p.config.Exchange(ctx, code)
 	if err != nil {
