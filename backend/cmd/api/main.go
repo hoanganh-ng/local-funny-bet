@@ -64,8 +64,11 @@ func main() {
 	predictionHandler := httpAdapters.NewPredictionHandler(predictionService)
 	leaderboardHandler := httpAdapters.NewLeaderboardHandler(leaderboardService)
 	wsHandler := httpAdapters.NewWebSocketHandler(hub)
+	healthHandler := httpAdapters.NewHealthHandler(db)
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health", healthHandler.Handle)
 
 	mux.HandleFunc("GET /auth/google", authHandler.InitiateGoogleLogin)
 	mux.HandleFunc("GET /auth/callback/google", authHandler.HandleGoogleCallback)

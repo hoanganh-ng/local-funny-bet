@@ -48,7 +48,7 @@ func LoadConfig() *Config {
 
 	corsOrigin := os.Getenv("CORS_ORIGIN")
 	if corsOrigin == "" {
-		corsOrigin = "*"
+		panic("CORS_ORIGIN environment variable must be set")
 	}
 
 	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")

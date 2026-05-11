@@ -17,6 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build:
@@ -37,6 +38,7 @@ services:
       PORT: 8080
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
   frontend:
     build:
@@ -47,6 +49,7 @@ services:
       - backend
     ports:
       - "80:80"
+    restart: unless-stopped
 
   # Uncomment when scaling - Redis for WebSocket message broker
   # redis:
