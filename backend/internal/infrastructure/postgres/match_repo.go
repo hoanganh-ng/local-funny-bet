@@ -133,15 +133,13 @@ func (r *MatchRepo) Upsert(ctx context.Context, m *match.Match) error {
 		INSERT INTO matches (id, tournament_id, home_team, away_team, home_score, away_score,
 		                     kickoff_at, status, external_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		ON CONFLICT (id) DO UPDATE SET
-			tournament_id = EXCLUDED.tournament_id,
+		ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO UPDATE SET
 			home_team = EXCLUDED.home_team,
 			away_team = EXCLUDED.away_team,
 			home_score = EXCLUDED.home_score,
 			away_score = EXCLUDED.away_score,
 			kickoff_at = EXCLUDED.kickoff_at,
-			status = EXCLUDED.status,
-			external_id = EXCLUDED.external_id
+			status = EXCLUDED.status
 	`
 
 	var homeScore, awayScore sql.NullInt64
@@ -171,6 +169,73 @@ func (r *MatchRepo) Upsert(ctx context.Context, m *match.Match) error {
 
 	if err != nil {
 		return fmt.Errorf("upserting match: %w", err)
+	}
+
+	return nil
+}
+
+func (r *MatchRepo) UpsertMany(ctx context.Context, matches []*match.Match) error {
+	if len(matches) == 0 {
+		return nil
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO matches (id, tournament_id, home_team, away_team, home_score, away_score,
+		                     kickoff_at, status, external_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO UPDATE SET
+			home_team = EXCLUDED.home_team,
+			away_team = EXCLUDED.away_team,
+			home_score = EXCLUDED.home_score,
+			away_score = EXCLUDED.away_score,
+			kickoff_at = EXCLUDED.kickoff_at,
+			status = EXCLUDED.status
+	`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("preparing statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, m := range matches {
+		var homeScore, awayScore sql.NullInt64
+		if m.HomeScore != nil {
+			homeScore = sql.NullInt64{Int64: int64(*m.HomeScore), Valid: true}
+		}
+		if m.AwayScore != nil {
+			awayScore = sql.NullInt64{Int64: int64(*m.AwayScore), Valid: true}
+		}
+
+		var externalID sql.NullString
+		if m.ExternalID != nil {
+			externalID = sql.NullString{String: *m.ExternalID, Valid: true}
+		}
+
+		_, err := stmt.ExecContext(ctx,
+			m.ID,
+			m.TournamentID,
+			m.HomeTeam,
+			m.AwayTeam,
+			homeScore,
+			awayScore,
+			m.KickoffAt,
+			m.Status,
+			externalID,
+		)
+		if err != nil {
+			return fmt.Errorf("upserting match %s: %w", m.ID, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
 	}
 
 	return nil

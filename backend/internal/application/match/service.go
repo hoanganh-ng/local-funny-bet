@@ -7,6 +7,7 @@ import (
 
 	"wc2026/internal/domain/leaderboard"
 	"wc2026/internal/domain/match"
+	"wc2026/internal/domain/tournament"
 )
 
 type FootballClient interface {
@@ -20,14 +21,16 @@ type Broadcaster interface {
 type Service struct {
 	repo         match.Repository
 	client       FootballClient
+	tournaments  tournament.Repository
 	leaderboards leaderboard.Repository
 	broadcaster  Broadcaster
 }
 
-func NewService(repo match.Repository, client FootballClient, leaderboards leaderboard.Repository, broadcaster Broadcaster) *Service {
+func NewService(repo match.Repository, client FootballClient, tournaments tournament.Repository, leaderboards leaderboard.Repository, broadcaster Broadcaster) *Service {
 	return &Service{
 		repo:         repo,
 		client:       client,
+		tournaments:  tournaments,
 		leaderboards: leaderboards,
 		broadcaster:  broadcaster,
 	}
@@ -50,20 +53,34 @@ func (s *Service) GetMatch(ctx context.Context, id string) (*match.Match, error)
 }
 
 func (s *Service) FetchAndStore(ctx context.Context) error {
-	matches, err := s.client.FetchMatches(ctx, "WC")
+	active, err := s.tournaments.GetActive(ctx)
+	if err != nil {
+		return fmt.Errorf("getting active tournament: %w", err)
+	}
+
+	if active.ExternalID == nil {
+		return fmt.Errorf("active tournament has no external_id")
+	}
+
+	matches, err := s.client.FetchMatches(ctx, *active.ExternalID)
 	if err != nil {
 		return fmt.Errorf("fetching matches from API: %w", err)
 	}
 
-	var matchIDs []string
 	for _, m := range matches {
-		if err := s.repo.Upsert(ctx, m); err != nil {
-			return fmt.Errorf("upserting match %s: %w", m.ID, err)
-		}
-		matchIDs = append(matchIDs, m.ID)
+		m.TournamentID = active.ID
 	}
 
-	if len(matchIDs) > 0 && s.broadcaster != nil && s.leaderboards != nil {
+	if err := s.repo.UpsertMany(ctx, matches); err != nil {
+		return fmt.Errorf("upserting matches: %w", err)
+	}
+
+	if len(matches) > 0 && s.broadcaster != nil && s.leaderboards != nil {
+		matchIDs := make([]string, len(matches))
+		for i, m := range matches {
+			matchIDs[i] = m.ID
+		}
+
 		affectedIDs, err := s.leaderboards.GetAffectedByMatches(ctx, matchIDs)
 		if err != nil {
 			return fmt.Errorf("getting affected leaderboards: %w", err)

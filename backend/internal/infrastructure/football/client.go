@@ -5,33 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"wc2026/internal/domain/match"
-	"wc2026/internal/domain/tournament"
 )
 
 const baseURL = "https://api.football-data.org/v4"
 
 type Client struct {
-	apiKey         string
-	httpClient     *http.Client
-	tournamentRepo tournament.Repository
+	apiKey     string
+	httpClient *http.Client
 }
 
-func NewClient(apiKey string, tournamentRepo tournament.Repository) *Client {
+func NewClient(apiKey string) *Client {
 	return &Client{
-		apiKey:         apiKey,
-		httpClient:     &http.Client{},
-		tournamentRepo: tournamentRepo,
+		apiKey: apiKey,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
 func (c *Client) FetchMatches(ctx context.Context, competitionCode string) ([]*match.Match, error) {
-	t, err := c.tournamentRepo.GetByExternalCode(ctx, competitionCode)
-	if err != nil {
-		return nil, fmt.Errorf("looking up tournament for code %s: %w", competitionCode, err)
-	}
-
 	url := fmt.Sprintf("%s/competitions/%s/matches", baseURL, competitionCode)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -47,6 +42,10 @@ func (c *Client) FetchMatches(ctx context.Context, competitionCode string) ([]*m
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, fmt.Errorf("rate limit exceeded (429)")
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("football-data.org returned status %d", resp.StatusCode)
 	}
@@ -56,10 +55,7 @@ func (c *Client) FetchMatches(ctx context.Context, competitionCode string) ([]*m
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
-	matches, err := mapMatches(response.Matches, t.ID)
-	if err != nil {
-		return nil, fmt.Errorf("mapping matches: %w", err)
-	}
+	matches := mapMatches(response.Matches)
 
 	return matches, nil
 }

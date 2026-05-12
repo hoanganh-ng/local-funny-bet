@@ -1,7 +1,7 @@
 package football
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -9,23 +9,24 @@ import (
 	"wc2026/internal/domain/match"
 )
 
-func mapMatches(apiMatches []apiMatch, tournamentID string) ([]*match.Match, error) {
+func mapMatches(apiMatches []apiMatch) []*match.Match {
 	matches := make([]*match.Match, 0, len(apiMatches))
 	for _, am := range apiMatches {
-		m, err := mapMatch(am, tournamentID)
+		m, err := mapMatch(am)
 		if err != nil {
-			return nil, fmt.Errorf("mapping match %d: %w", am.ID, err)
+			log.Printf("skipping malformed match %d: %v", am.ID, err)
+			continue
 		}
 		matches = append(matches, m)
 	}
 
-	return matches, nil
+	return matches
 }
 
-func mapMatch(am apiMatch, tournamentID string) (*match.Match, error) {
+func mapMatch(am apiMatch) (*match.Match, error) {
 	kickoffAt, err := time.Parse(time.RFC3339, am.UTCDate)
 	if err != nil {
-		return nil, fmt.Errorf("parsing kickoff time %s: %w", am.UTCDate, err)
+		return nil, err
 	}
 
 	status := mapStatus(am.Status)
@@ -33,7 +34,7 @@ func mapMatch(am apiMatch, tournamentID string) (*match.Match, error) {
 
 	return &match.Match{
 		ID:           uuid.New().String(),
-		TournamentID: tournamentID,
+		TournamentID: "",
 		HomeTeam:     am.HomeTeam.Name,
 		AwayTeam:     am.AwayTeam.Name,
 		HomeScore:    am.Score.FullTime.Home,

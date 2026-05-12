@@ -52,7 +52,7 @@ func main() {
 		cfg.AllowedEmailDomains,
 	)
 
-	footballClient := football.NewClient(cfg.FootballAPIKey, tournamentRepo)
+	footballClient := football.NewClient(cfg.FootballAPIKey)
 
 	tokenSigner := jwt.NewSigner(cfg.JWTSecret)
 	tokenVerifier := jwt.NewVerifier(cfg.JWTSecret)
@@ -61,7 +61,7 @@ func main() {
 	go hub.Run()
 
 	authService := auth.NewService(userRepo, googleProvider, tokenSigner, cfg.JWTRefreshSecret)
-	matchService := match.NewService(matchRepo, footballClient, leaderboardRepo, hub)
+	matchService := match.NewService(matchRepo, footballClient, tournamentRepo, leaderboardRepo, hub)
 	predictionService := predictionApp.NewService(predictionRepo, matchRepo, leaderboardRepo)
 	leaderboardService := leaderboardApp.NewService(leaderboardRepo, cfg.JWTSecret)
 
@@ -102,7 +102,7 @@ func main() {
 		middleware.CORS(cfg.CORSOrigin)(mux),
 	)
 
-	matchScheduler := scheduler.NewScheduler(matchService, 60*time.Second)
+	matchScheduler := scheduler.NewScheduler(matchService, 5*time.Minute)
 	go matchScheduler.Start(context.Background())
 
 	server := &http.Server{

@@ -137,3 +137,40 @@ func (r *TournamentRepo) List(ctx context.Context) ([]*tournament.Tournament, er
 
 	return tournaments, nil
 }
+
+func (r *TournamentRepo) GetActive(ctx context.Context) (*tournament.Tournament, error) {
+	query := `
+		SELECT id, name, season, logo_url, status, external_id
+		FROM tournaments
+		ORDER BY season DESC
+		LIMIT 1
+	`
+
+	var t tournament.Tournament
+	var logoURL, externalID sql.NullString
+
+	err := r.db.QueryRowContext(ctx, query).Scan(
+		&t.ID,
+		&t.Name,
+		&t.Season,
+		&logoURL,
+		&t.Status,
+		&externalID,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("getting active tournament: %w", domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("getting active tournament: %w", err)
+	}
+
+	if logoURL.Valid {
+		t.LogoURL = &logoURL.String
+	}
+	if externalID.Valid {
+		t.ExternalID = &externalID.String
+	}
+
+	return &t, nil
+}
