@@ -21,6 +21,7 @@ import (
 	"wc2026/internal/infrastructure/jwt"
 	"wc2026/internal/infrastructure/postgres"
 	"wc2026/internal/middleware"
+	"wc2026/migrations"
 
 	httpAdapters "wc2026/internal/adapters/http"
 )
@@ -34,10 +35,15 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := postgres.Up(db, migrations.FS); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+
 	userRepo := postgres.NewUserRepo(db)
 	matchRepo := postgres.NewMatchRepo(db)
 	predictionRepo := postgres.NewPredictionRepo(db)
 	leaderboardRepo := postgres.NewLeaderboardRepo(db)
+	tournamentRepo := postgres.NewTournamentRepo(db)
 
 	googleProvider := google.NewProvider(
 		cfg.GoogleClientID,
@@ -46,7 +52,7 @@ func main() {
 		cfg.AllowedEmailDomains,
 	)
 
-	footballClient := football.NewClient(cfg.FootballAPIKey)
+	footballClient := football.NewClient(cfg.FootballAPIKey, tournamentRepo)
 
 	tokenSigner := jwt.NewSigner(cfg.JWTSecret)
 	tokenVerifier := jwt.NewVerifier(cfg.JWTSecret)

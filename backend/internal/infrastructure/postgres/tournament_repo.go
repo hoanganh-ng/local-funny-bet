@@ -54,6 +54,43 @@ func (r *TournamentRepo) GetByID(ctx context.Context, id string) (*tournament.To
 	return &t, nil
 }
 
+func (r *TournamentRepo) GetByExternalCode(ctx context.Context, code string) (*tournament.Tournament, error) {
+	query := `
+		SELECT id, name, season, logo_url, status, external_id
+		FROM tournaments
+		WHERE external_id = $1
+		LIMIT 1
+	`
+
+	var t tournament.Tournament
+	var logoURL, externalID sql.NullString
+
+	err := r.db.QueryRowContext(ctx, query, code).Scan(
+		&t.ID,
+		&t.Name,
+		&t.Season,
+		&logoURL,
+		&t.Status,
+		&externalID,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("getting tournament by external code %s: %w", code, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("getting tournament by external code %s: %w", code, err)
+	}
+
+	if logoURL.Valid {
+		t.LogoURL = &logoURL.String
+	}
+	if externalID.Valid {
+		t.ExternalID = &externalID.String
+	}
+
+	return &t, nil
+}
+
 func (r *TournamentRepo) List(ctx context.Context) ([]*tournament.Tournament, error) {
 	query := `
 		SELECT id, name, season, logo_url, status, external_id

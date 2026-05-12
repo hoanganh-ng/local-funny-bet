@@ -9,16 +9,7 @@ import (
 	"wc2026/internal/domain/match"
 )
 
-var competitionToTournamentID = map[string]string{
-	"WC": "TOURNAMENT_UUID_HERE",
-}
-
-func mapMatches(apiMatches []apiMatch, competitionCode string) ([]*match.Match, error) {
-	tournamentID, ok := competitionToTournamentID[competitionCode]
-	if !ok {
-		return nil, fmt.Errorf("unknown competition code: %s", competitionCode)
-	}
-
+func mapMatches(apiMatches []apiMatch, tournamentID string) ([]*match.Match, error) {
 	matches := make([]*match.Match, 0, len(apiMatches))
 	for _, am := range apiMatches {
 		m, err := mapMatch(am, tournamentID)

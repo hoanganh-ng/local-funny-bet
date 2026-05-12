@@ -7,23 +7,31 @@ import (
 	"net/http"
 
 	"wc2026/internal/domain/match"
+	"wc2026/internal/domain/tournament"
 )
 
 const baseURL = "https://api.football-data.org/v4"
 
 type Client struct {
-	apiKey     string
-	httpClient *http.Client
+	apiKey         string
+	httpClient     *http.Client
+	tournamentRepo tournament.Repository
 }
 
-func NewClient(apiKey string) *Client {
+func NewClient(apiKey string, tournamentRepo tournament.Repository) *Client {
 	return &Client{
-		apiKey:     apiKey,
-		httpClient: &http.Client{},
+		apiKey:         apiKey,
+		httpClient:     &http.Client{},
+		tournamentRepo: tournamentRepo,
 	}
 }
 
 func (c *Client) FetchMatches(ctx context.Context, competitionCode string) ([]*match.Match, error) {
+	t, err := c.tournamentRepo.GetByExternalCode(ctx, competitionCode)
+	if err != nil {
+		return nil, fmt.Errorf("looking up tournament for code %s: %w", competitionCode, err)
+	}
+
 	url := fmt.Sprintf("%s/competitions/%s/matches", baseURL, competitionCode)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -48,7 +56,7 @@ func (c *Client) FetchMatches(ctx context.Context, competitionCode string) ([]*m
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
-	matches, err := mapMatches(response.Matches, competitionCode)
+	matches, err := mapMatches(response.Matches, t.ID)
 	if err != nil {
 		return nil, fmt.Errorf("mapping matches: %w", err)
 	}
