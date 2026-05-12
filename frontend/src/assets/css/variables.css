@@ -1,172 +1,168 @@
-/* assets/css/variables.css */
-
 /* ─────────────────────────────────────────────────────────────── */
-/* DARK THEME (default)                                            */
+/* DARK THEME (default) — Linear / Modern                          */
 /* ─────────────────────────────────────────────────────────────── */
 :root,
 [data-theme="dark"] {
-  --color-bg:               #050506;
-  --color-bg-deep:          #020203;
-  --color-bg-elevated:      #0a0a0c;
-  --color-surface:          rgba(255,255,255,0.05);
-  --color-surface-hover:    rgba(255,255,255,0.08);
-  --color-border:           rgba(255,255,255,0.06);
-  --color-border-hover:     rgba(255,255,255,0.10);
-  --color-border-accent:    rgba(94,106,210,0.30);
-  --color-border-strong:    rgba(255,255,255,0.15);
 
-  --color-text-primary:     #EDEDEF;
-  --color-text-secondary:   #8A8F98;
-  --color-text-disabled:    rgba(255,255,255,0.30);
+  /* Backgrounds */
+  --color-bg:            #050506;
+  --color-bg-deep:       #020203;
+  --color-bg-elevated:   #0a0a0c;
 
-  --color-accent:           #5E6AD2;
-  --color-accent-hover:     #6872D9;
-  --color-accent-glow:      rgba(94,106,210,0.30);
-  --color-danger:           #E5534B;
-  --color-success:          #3FB950;
-  --color-warning:          #D29922;
+  /* Surfaces */
+  --color-surface:       rgba(255,255,255,0.05);
+  --color-surface-hover: rgba(255,255,255,0.08);
 
-  --color-status-scheduled: #8A8F98;
-  --color-status-live:      #5E6AD2;
-  --color-status-finished:  rgba(255,255,255,0.40);
-  --color-home-win:         #5E6AD2;
-  --color-draw:             #8A8F98;
-  --color-away-win:         #3FB950;
+  /* Borders */
+  --color-border:        rgba(255,255,255,0.06);
+  --color-border-hover:  rgba(255,255,255,0.10);
+  --color-border-strong: rgba(255,255,255,0.15);
+  --color-border-accent: rgba(94,106,210,0.30);
 
-  --font-display:   "Inter", "Geist Sans", system-ui, sans-serif;
-  --font-body:      "Inter", "Geist Sans", system-ui, sans-serif;
-  --font-mono:      "JetBrains Mono", monospace;
+  /* Text */
+  --color-text-primary:   #EDEDEF;
+  --color-text-secondary: #8A8F98;
+  --color-text-disabled:  rgba(255,255,255,0.30);
 
-  --radius-sm:   6px;
-  --radius-md:   8px;
-  --radius-lg:   16px;
-  --radius-full: 9999px;
+  /* Accent — indigo */
+  --color-accent:       #5E6AD2;
+  --color-accent-hover: #6872D9;
+  --color-accent-glow:  rgba(94,106,210,0.30);
+  --color-accent-text:  #ffffff;
 
+  /* Semantic */
+  --color-danger:  #E5534B;
+  --color-success: #3FB950;
+  --color-warning: #D29922;
+
+  /* WC2026-specific */
+  --color-live:    #5E6AD2;
+  --color-correct: #3FB950;
+  --color-wrong:   rgba(255,255,255,0.30);
+  --color-soon:    #D29922;
+  --color-pick-bg: rgba(94,106,210,0.15);
+
+  /* Pre-composed borders */
   --border-hairline: 1px solid rgba(255,255,255,0.06);
   --border-thin:     1px solid rgba(255,255,255,0.10);
   --border-medium:   1px solid rgba(255,255,255,0.15);
-  --border-thick:    1px solid rgba(94,106,210,0.30);
-  --border-ultra:    1px solid rgba(255,255,255,0.20);
+  --border-accent:   1px solid rgba(94,106,210,0.30);
 
+  /* Shadows — always minimum 3 layers */
   --shadow-sm:     0 0 0 1px rgba(255,255,255,0.06), 0 2px 20px rgba(0,0,0,0.4);
   --shadow-md:     0 0 0 1px rgba(255,255,255,0.06), 0 2px 20px rgba(0,0,0,0.4), 0 0 40px rgba(0,0,0,0.2);
   --shadow-lg:     0 0 0 1px rgba(255,255,255,0.10), 0 8px 40px rgba(0,0,0,0.5), 0 0 80px rgba(94,106,210,0.10);
   --shadow-accent: 0 0 20px rgba(94,106,210,0.4), 0 0 60px rgba(94,106,210,0.2);
 
+  /* Typography */
+  --font-display: "Inter", "Geist Sans", system-ui, sans-serif;
+  --font-body:    "Inter", "Geist Sans", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   16px;
+  --radius-pill: 9999px;
+
+  /* Motion */
   --duration-fast: 200ms;
   --duration-base: 300ms;
   --duration-slow: 600ms;
   --blob-duration: 9000ms;
   --ease-default:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-hover:    ease-out;
+
+  /* Spacing */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+  --space-8: 32px;  --space-10: 40px; --space-12: 48px;
+
+  /* Layout */
+  --sidebar-w:    300px;
+  --bottom-nav-h: 64px;
 }
 
 /* ─────────────────────────────────────────────────────────────── */
-/* LIGHT THEME                                                     */
+/* LIGHT THEME — Minimalist Monochrome                             */
 /* ─────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg:               #FFFFFF;
-  --color-bg-deep:          #F5F5F5;
-  --color-bg-elevated:      #FFFFFF;
-  --color-surface:          #FFFFFF;
-  --color-surface-hover:    #000000;
-  --color-border:           #E5E5E5;
-  --color-border-hover:     #000000;
-  --color-border-accent:    #000000;
-  --color-border-strong:    #000000;
 
-  --color-text-primary:     #000000;
-  --color-text-secondary:   #525252;
-  --color-text-disabled:    #A3A3A3;
+  /* Backgrounds */
+  --color-bg:            #FFFFFF;
+  --color-bg-deep:       #F5F5F5;
+  --color-bg-elevated:   #FFFFFF;
 
-  --color-accent:           #000000;
-  --color-accent-hover:     #000000;
-  --color-accent-glow:      transparent;
-  --color-danger:           #000000;
-  --color-success:          #000000;
-  --color-warning:          #000000;
+  /* Surfaces — inversion IS the depth signal */
+  --color-surface:       #FFFFFF;
+  --color-surface-hover: #000000;
 
-  --color-status-scheduled: #525252;
-  --color-status-live:      #000000;
-  --color-status-finished:  #A3A3A3;
-  --color-home-win:         #000000;
-  --color-draw:             #525252;
-  --color-away-win:         #000000;
+  /* Borders */
+  --color-border:        #E5E5E5;
+  --color-border-hover:  #000000;
+  --color-border-strong: #000000;
+  --color-border-accent: #000000;
 
-  --font-display:  "Playfair Display", Georgia, serif;
-  --font-body:     "Source Serif 4", Georgia, serif;
-  --font-mono:     "JetBrains Mono", monospace;
+  /* Text */
+  --color-text-primary:   #000000;
+  --color-text-secondary: #525252;
+  --color-text-disabled:  #A3A3A3;
 
-  --radius-sm:   0px;
-  --radius-md:   0px;
-  --radius-lg:   0px;
-  --radius-full: 0px;
+  /* Accent — black IS the accent */
+  --color-accent:       #000000;
+  --color-accent-hover: #000000;
+  --color-accent-glow:  transparent;
+  --color-accent-text:  #ffffff;
 
+  /* Semantic — monochrome: weight + border, not color */
+  --color-danger:  #000000;
+  --color-success: #000000;
+  --color-warning: #000000;
+
+  /* WC2026-specific */
+  --color-live:    #000000;
+  --color-correct: #000000;
+  --color-wrong:   #A3A3A3;
+  --color-soon:    #525252;
+  --color-pick-bg: #000000;  /* selected = full inversion */
+
+  /* Pre-composed borders */
   --border-hairline: 1px solid #E5E5E5;
-  --border-thin:     1px solid #000000;
-  --border-medium:   2px solid #000000;
-  --border-thick:    4px solid #000000;
-  --border-ultra:    8px solid #000000;
+  --border-thin:     1px solid #D4D4D4;
+  --border-medium:   1px solid #000000;
+  --border-accent:   4px solid #000000;  /* thick rule = emphasis */
 
+  /* Shadows — none */
   --shadow-sm:     none;
   --shadow-md:     none;
   --shadow-lg:     none;
   --shadow-accent: none;
 
-  --duration-fast: 100ms;
-  --duration-base: 100ms;
-  --duration-slow: 300ms;
+  /* Typography — serif */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body:    "Source Serif 4", Georgia, serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  /* Radius — zero everywhere, non-negotiable */
+  --radius-sm:   0px;
+  --radius-md:   0px;
+  --radius-lg:   0px;
+  --radius-pill: 0px;
+
+  /* Motion — binary, no easing */
+  --duration-fast: 80ms;
+  --duration-base: 80ms;
+  --duration-slow: 80ms;
   --blob-duration: 0ms;
-  --ease-default:  ease-out;
-  --ease-hover:    ease-out;
-}
+  --ease-default:  step-end;
+  --ease-hover:    step-end;
 
-/* ── Shared tokens (theme-independent) ───────────────────────── */
-:root {
-  --text-xs:   0.75rem;
-  --text-sm:   0.875rem;
-  --text-base: 1rem;
-  --text-lg:   1.125rem;
-  --text-xl:   1.25rem;
-  --text-2xl:  1.5rem;
-  --text-3xl:  1.875rem;
-  --text-4xl:  2.25rem;
-  --text-5xl:  3rem;
-  --text-6xl:  3.75rem;
-  --text-7xl:  4.5rem;
-  --text-8xl:  6rem;
+  /* Spacing (same scale) */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+  --space-8: 32px;  --space-10: 40px; --space-12: 48px;
 
-  --font-normal:   400;
-  --font-medium:   500;
-  --font-semibold: 600;
-  --font-bold:     700;
-  --font-black:    900;
-
-  --leading-none:    1;
-  --leading-tight:   1.2;
-  --leading-normal:  1.5;
-  --leading-relaxed: 1.7;
-
-  --tracking-tight:   -0.025em;
-  --tracking-tighter: -0.05em;
-  --tracking-wide:     0.05em;
-  --tracking-widest:   0.1em;
-
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-24: 6rem;
-  --space-32: 8rem;
-
-  --max-width:      1200px;
-  --sidebar-width:  260px;
-  --header-height:  60px;
-  --mobile-padding: var(--space-4);
+  /* Layout (same) */
+  --sidebar-w:    300px;
+  --bottom-nav-h: 64px;
 }

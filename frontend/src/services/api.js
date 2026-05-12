@@ -1,10 +1,13 @@
+import { useAuthStore } from '../store/auth.store.js'
+
 const API_BASE = '/api'
 
 let isRefreshing = false
 let refreshPromise = null
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('token')
+  const authStore = useAuthStore()
+  const token = authStore.token
 
   const headers = {
     'Content-Type': 'application/json',
@@ -25,20 +28,8 @@ async function request(path, options = {}) {
   if (response.status === 401 && !options._isRetry) {
     if (!isRefreshing) {
       isRefreshing = true
-      refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      })
-        .then(async (res) => {
-          if (!res.ok) throw new Error('Refresh failed')
-          const data = await res.json()
-          localStorage.setItem('token', data.token)
-          return data.token
-        })
+      refreshPromise = authStore.refresh()
         .catch(() => {
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
           window.location.href = '/login'
           throw new Error('Session expired')
         })
@@ -49,7 +40,8 @@ async function request(path, options = {}) {
     }
 
     try {
-      const newToken = await refreshPromise
+      await refreshPromise
+      const newToken = authStore.token
       headers['Authorization'] = `Bearer ${newToken}`
       response = await fetch(`${API_BASE}${path}`, {
         ...config,

@@ -78,6 +78,7 @@ func main() {
 
 	mux.HandleFunc("GET /auth/google", authHandler.InitiateGoogleLogin)
 	mux.HandleFunc("GET /auth/callback/google", authHandler.HandleGoogleCallback)
+	mux.HandleFunc("POST /auth/exchange", authHandler.ExchangeRefreshForAccess)
 	mux.HandleFunc("POST /auth/refresh", authHandler.RefreshToken)
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 

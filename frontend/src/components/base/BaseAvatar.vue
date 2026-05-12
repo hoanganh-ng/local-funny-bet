@@ -7,7 +7,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'md',
-    validator: v => ['sm', 'md', 'lg'].includes(v)
+    validator: v => ['sm', 'md', 'lg', 'xl'].includes(v)
   }
 })
 
@@ -80,6 +80,12 @@ const imageError = computed(() => !props.src)
   width: 56px;
   height: 56px;
   font-size: var(--text-base);
+}
+
+.avatar--xl {
+  width: 80px;
+  height: 80px;
+  font-size: var(--text-lg);
 }
 
 /* ─── Dark theme ─── */

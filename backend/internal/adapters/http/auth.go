@@ -42,7 +42,7 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	accessToken, refreshToken, err := h.service.HandleGoogleCallback(r.Context(), code)
+	_, refreshToken, err := h.service.HandleGoogleCallback(r.Context(), code)
 	if err != nil {
 		if errors.Is(err, domain.ErrUnauthorized) {
 			http.Redirect(w, r, h.frontendURL+"/login?error=unauthorized", http.StatusTemporaryRedirect)
@@ -62,8 +62,27 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	redirectURL := fmt.Sprintf("%s/auth/callback?token=%s", h.frontendURL, accessToken)
+	// Redirect to frontend OAuth callback handler
+	redirectURL := fmt.Sprintf("%s/auth/callback?success=true", h.frontendURL)
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+}
+
+func (h *AuthHandler) ExchangeRefreshForAccess(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "missing refresh token")
+		return
+	}
+
+	accessToken, err := h.service.RefreshToken(r.Context(), cookie.Value)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "invalid refresh token")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{
+		"access_token": accessToken,
+	})
 }
 
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {

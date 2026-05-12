@@ -3,19 +3,38 @@ const props = defineProps({
   modelValue: {
     type: String,
     default: null,
-    validator: (val) => val === null || ['home_win', 'draw', 'away_win'].includes(val)
+    validator: (val) => val === null || ['home', 'draw', 'away'].includes(val)
   },
-  disabled: {
+  locked: {
     type: Boolean,
     default: false
+  },
+  result: {
+    type: String,
+    default: null,
+    validator: (val) => val === null || ['home', 'draw', 'away'].includes(val)
+  },
+  points: {
+    type: Number,
+    default: null
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const selectOutcome = (outcome) => {
-  if (props.disabled) return
+  if (props.locked) return
   emit('update:modelValue', outcome)
+}
+
+const getOutcomeState = (outcome) => {
+  if (!props.result) return null
+  if (!props.modelValue) return null
+
+  if (props.modelValue === outcome) {
+    return props.result === outcome ? 'correct' : 'wrong'
+  }
+  return null
 }
 </script>
 
@@ -25,83 +44,202 @@ const selectOutcome = (outcome) => {
       type="button"
       class="outcome-btn"
       :class="{
-        selected: modelValue === 'home_win',
-        disabled: disabled
+        selected: modelValue === 'home',
+        locked: locked,
+        correct: getOutcomeState('home') === 'correct',
+        wrong: getOutcomeState('home') === 'wrong'
       }"
-      :disabled="disabled"
-      @click="selectOutcome('home_win')"
+      :disabled="locked"
+      @click="selectOutcome('home')"
     >
-      Home Win
+      <span class="outcome-label">1</span>
+      <span class="outcome-sublabel">HOME</span>
+      <span v-if="getOutcomeState('home') === 'correct'" class="outcome-points">
+        +{{ points }}
+      </span>
     </button>
+
     <button
       type="button"
       class="outcome-btn"
       :class="{
         selected: modelValue === 'draw',
-        disabled: disabled
+        locked: locked,
+        correct: getOutcomeState('draw') === 'correct',
+        wrong: getOutcomeState('draw') === 'wrong'
       }"
-      :disabled="disabled"
+      :disabled="locked"
       @click="selectOutcome('draw')"
     >
-      Draw
+      <span class="outcome-label">X</span>
+      <span class="outcome-sublabel">DRAW</span>
+      <span v-if="getOutcomeState('draw') === 'correct'" class="outcome-points">
+        +{{ points }}
+      </span>
     </button>
+
     <button
       type="button"
       class="outcome-btn"
       :class="{
-        selected: modelValue === 'away_win',
-        disabled: disabled
+        selected: modelValue === 'away',
+        locked: locked,
+        correct: getOutcomeState('away') === 'correct',
+        wrong: getOutcomeState('away') === 'wrong'
       }"
-      :disabled="disabled"
-      @click="selectOutcome('away_win')"
+      :disabled="locked"
+      @click="selectOutcome('away')"
     >
-      Away Win
+      <span class="outcome-label">2</span>
+      <span class="outcome-sublabel">AWAY</span>
+      <span v-if="getOutcomeState('away') === 'correct'" class="outcome-points">
+        +{{ points }}
+      </span>
     </button>
   </div>
 </template>
 
 <style scoped>
 .outcome-picker {
-  display: flex;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
 }
 
 .outcome-btn {
-  flex: 1;
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
   font-family: var(--font-body);
-  color: var(--color-text-primary);
-  background: transparent;
-  border: var(--border-thin);
-  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: var(--border-hairline);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
+  position: relative;
 }
 
-.outcome-btn:hover:not(.disabled) {
+/* ──── Dark theme ──── */
+[data-theme="dark"] .outcome-btn {
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .outcome-btn:hover:not(.locked) {
   background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .outcome-btn.selected {
+  background: var(--color-pick-bg);
+  border: var(--border-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+[data-theme="dark"] .outcome-btn.correct {
+  background: rgba(63,185,80,0.15);
+  border-color: var(--color-correct);
+  box-shadow: 0 0 20px rgba(63,185,80,0.2);
+}
+
+[data-theme="dark"] .outcome-btn.wrong {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+/* ──── Light theme ──── */
+[data-theme="light"] .outcome-btn {
+  border-radius: 0;
+}
+
+[data-theme="light"] .outcome-btn:hover:not(.locked) {
   border-color: var(--color-border-hover);
 }
 
-.outcome-btn.selected {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
-}
-
 [data-theme="light"] .outcome-btn.selected {
-  background: var(--color-bg);
-  border-color: var(--color-border-strong);
-  color: var(--color-text-primary);
-  border-width: 2px;
+  background: var(--color-pick-bg);
+  color: var(--color-accent-text);
+  border: var(--border-medium);
 }
 
-.outcome-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  color: var(--color-text-disabled);
+[data-theme="light"] .outcome-btn.correct {
+  background: var(--color-correct);
+  color: var(--color-accent-text);
+  border: var(--border-medium);
+  font-weight: var(--font-bold);
+}
+
+[data-theme="light"] .outcome-btn.wrong {
+  color: var(--color-wrong);
   border-color: var(--color-border);
+}
+
+/* ──── Labels ──── */
+.outcome-label {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .outcome-btn.selected .outcome-label {
+  color: var(--color-accent);
+}
+
+[data-theme="dark"] .outcome-btn.correct .outcome-label {
+  color: var(--color-correct);
+}
+
+[data-theme="light"] .outcome-btn.selected .outcome-label,
+[data-theme="light"] .outcome-btn.correct .outcome-label {
+  color: inherit;
+}
+
+.outcome-sublabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+[data-theme="dark"] .outcome-btn.selected .outcome-sublabel {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .outcome-btn.correct .outcome-sublabel {
+  color: var(--color-correct);
+}
+
+[data-theme="light"] .outcome-btn.selected .outcome-sublabel,
+[data-theme="light"] .outcome-btn.correct .outcome-sublabel {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.outcome-points {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  color: var(--color-correct);
+}
+
+[data-theme="light"] .outcome-points {
+  color: inherit;
+}
+
+/* ──── Locked state ──── */
+.outcome-btn.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.outcome-btn.wrong {
+  opacity: 0.5;
 }
 </style>

@@ -1,77 +1,68 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../store/auth.store.js'
-import { useLeaderboardStore } from '../store/leaderboard.store.js'
-import { leaderboardService } from '../services/leaderboard.service.js'
+import { ref, computed, onMounted } from 'vue'
 import { matchService } from '../services/match.service.js'
+import MatchCard from '../components/common/MatchCard.vue'
 import BaseButton from '../components/base/BaseButton.vue'
-import BaseModal from '../components/base/BaseModal.vue'
-import BaseInput from '../components/base/BaseInput.vue'
-import BaseCard from '../components/base/BaseCard.vue'
-import MatchList from '../components/match/MatchList.vue'
 import AdSlot from '../components/base/AdSlot.vue'
 
-const router = useRouter()
-const authStore = useAuthStore()
-const leaderboardStore = useLeaderboardStore()
-
-const showCreateModal = ref(false)
-const newLeaderboardName = ref('')
-const isCreating = ref(false)
-const createError = ref('')
-
-const upcomingMatches = ref([])
-const isLoadingMatches = ref(false)
+const matches = ref([])
+const isLoading = ref(true)
 
 onMounted(async () => {
-  await leaderboardStore.fetchAll()
-
-  isLoadingMatches.value = true
   try {
-    upcomingMatches.value = await matchService.list('scheduled')
-  } catch (err) {
-    console.error('Failed to load matches:', err)
+    matches.value = await matchService.list()
+  } catch (error) {
+    console.error('Failed to load matches:', error)
   } finally {
-    isLoadingMatches.value = false
+    isLoading.value = false
   }
 })
 
-function openCreateModal() {
-  showCreateModal.value = true
-  newLeaderboardName.value = ''
-  createError.value = ''
-}
+const now = new Date()
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+const tomorrow = new Date(today)
+tomorrow.setDate(tomorrow.getDate() + 1)
 
-function closeCreateModal() {
-  showCreateModal.value = false
-  newLeaderboardName.value = ''
-  createError.value = ''
-}
+const liveMatches = computed(() => {
+  return matches.value.filter(m => m.status === 'live')
+})
 
-async function createLeaderboard() {
-  if (!newLeaderboardName.value.trim()) {
-    createError.value = 'Name is required'
-    return
+const todayMatches = computed(() => {
+  return matches.value.filter(m => {
+    if (m.status === 'live') return false
+    const kickoff = new Date(m.kickoffAt)
+    return kickoff >= today && kickoff < tomorrow
+  })
+})
+
+const tomorrowMatches = computed(() => {
+  return matches.value.filter(m => {
+    const kickoff = new Date(m.kickoffAt)
+    const dayAfter = new Date(tomorrow)
+    dayAfter.setDate(dayAfter.getDate() + 1)
+    return kickoff >= tomorrow && kickoff < dayAfter
+  })
+})
+
+const laterMatches = computed(() => {
+  return matches.value.filter(m => {
+    const kickoff = new Date(m.kickoffAt)
+    const dayAfter = new Date(tomorrow)
+    dayAfter.setDate(dayAfter.getDate() + 1)
+    return kickoff >= dayAfter
+  })
+})
+
+const statsToday = computed(() => {
+  const all = [...liveMatches.value, ...todayMatches.value]
+  const predicted = all.filter(m => m.userPrediction)
+  return {
+    live: liveMatches.value.length,
+    upcoming: todayMatches.value.length,
+    predicted: predicted.length,
+    total: all.length
   }
-
-  isCreating.value = true
-  createError.value = ''
-
-  try {
-    await leaderboardService.create(newLeaderboardName.value.trim())
-    await leaderboardStore.fetchAll()
-    closeCreateModal()
-  } catch (err) {
-    createError.value = err.message || 'Failed to create leaderboard'
-  } finally {
-    isCreating.value = false
-  }
-}
-
-function goToLeaderboard(id) {
-  router.push(`/leaderboard/${id}`)
-}
+})
 </script>
 
 <template>
@@ -79,70 +70,93 @@ function goToLeaderboard(id) {
     <div class="container">
       <AdSlot position="top" />
 
-      <section class="welcome-section">
-        <h1 class="welcome-title">
-          Welcome, {{ authStore.user?.name || 'Player' }}
-        </h1>
-        <BaseButton @click="openCreateModal">
-          Create Leaderboard
+      <!-- Header -->
+      <header class="page-header">
+        <div class="header-content">
+          <p class="header-time">Today · {{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }}</p>
+          <h1 class="page-title">Today's slate</h1>
+          <p class="page-subtitle">
+            {{ statsToday.live }} live · {{ statsToday.upcoming }} in the next 24h · {{ statsToday.predicted }}/{{ statsToday.total }} predicted
+          </p>
+        </div>
+        <BaseButton @click="$router.push('/leaderboards')">
+          Predict next match →
         </BaseButton>
-      </section>
+      </header>
 
-      <section class="leaderboards-section">
-        <h2 class="section-title">Your Leaderboards</h2>
-        <div v-if="leaderboardStore.leaderboards.length === 0" class="empty-state">
-          <p>You haven't joined any leaderboards yet.</p>
-          <p class="empty-hint">Create one or ask a friend for an invite link.</p>
-        </div>
-        <div v-else class="leaderboards-grid">
-          <BaseCard
-            v-for="leaderboard in leaderboardStore.leaderboards"
-            :key="leaderboard.id"
-            hoverable
-            class="leaderboard-card"
-            @click="goToLeaderboard(leaderboard.id)"
-          >
-            <h3 class="leaderboard-name">{{ leaderboard.name }}</h3>
-            <p class="leaderboard-meta">{{ leaderboard.memberCount }} members</p>
-          </BaseCard>
-        </div>
-      </section>
+      <div v-if="isLoading" class="loading-state">
+        Loading matches...
+      </div>
 
-      <section class="matches-section">
-        <h2 class="section-title">Upcoming Matches</h2>
-        <div v-if="isLoadingMatches" class="loading-state">
-          Loading matches...
-        </div>
-        <MatchList v-else :matches="upcomingMatches" />
-      </section>
+      <div v-else class="matches-content">
+        <!-- LIVE NOW -->
+        <section v-if="liveMatches.length > 0" class="matches-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <span class="live-indicator">● LIVE</span>
+              NOW
+            </h2>
+          </div>
+          <div class="matches-list">
+            <MatchCard
+              v-for="match in liveMatches"
+              :key="match.id"
+              :match="match"
+            />
+          </div>
+        </section>
 
-      <BaseModal
-        :open="showCreateModal"
-        title="Create Leaderboard"
-        @close="closeCreateModal"
-      >
-        <div class="modal-content">
-          <BaseInput
-            v-model="newLeaderboardName"
-            label="Leaderboard Name"
-            placeholder="e.g., Office Cup 2026"
-            :error="createError"
-            @keyup.enter="createLeaderboard"
-          />
+        <!-- TODAY -->
+        <section v-if="todayMatches.length > 0" class="matches-section">
+          <div class="section-header">
+            <h2 class="section-title">Later Today</h2>
+          </div>
+          <div class="matches-list">
+            <MatchCard
+              v-for="match in todayMatches"
+              :key="match.id"
+              :match="match"
+            />
+          </div>
+        </section>
+
+        <!-- TOMORROW -->
+        <section v-if="tomorrowMatches.length > 0" class="matches-section">
+          <div class="section-header">
+            <h2 class="section-title">Tomorrow</h2>
+          </div>
+          <div class="matches-list">
+            <MatchCard
+              v-for="match in tomorrowMatches"
+              :key="match.id"
+              :match="match"
+            />
+          </div>
+        </section>
+
+        <!-- UPCOMING -->
+        <section v-if="laterMatches.length > 0" class="matches-section">
+          <div class="section-header">
+            <h2 class="section-title">Upcoming</h2>
+          </div>
+          <div class="matches-list">
+            <MatchCard
+              v-for="match in laterMatches.slice(0, 10)"
+              :key="match.id"
+              :match="match"
+            />
+          </div>
+        </section>
+
+        <!-- Empty state -->
+        <div v-if="matches.length === 0" class="empty-state">
+          <div class="empty-icon">⚽</div>
+          <h2 class="empty-title">No matches scheduled</h2>
+          <p class="empty-subtitle">
+            Check back later for upcoming fixtures.
+          </p>
         </div>
-        <template #footer>
-          <BaseButton variant="ghost" @click="closeCreateModal">
-            Cancel
-          </BaseButton>
-          <BaseButton
-            :loading="isCreating"
-            :disabled="!newLeaderboardName.trim()"
-            @click="createLeaderboard"
-          >
-            Create
-          </BaseButton>
-        </template>
-      </BaseModal>
+      </div>
     </div>
   </div>
 </template>
@@ -150,113 +164,162 @@ function goToLeaderboard(id) {
 <style scoped>
 .home-view {
   min-height: 100vh;
-  background: var(--color-bg);
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-8) var(--space-6);
 }
 
 .container {
-  max-width: var(--max-width);
+  max-width: 900px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: var(--space-10);
 }
 
-.welcome-section {
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.header-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.header-time {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: var(--font-black);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+}
+
+.page-subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.loading-state {
+  padding: var(--space-12);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.matches-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.matches-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.welcome-title {
-  font-family: var(--font-display);
-  font-size: var(--text-4xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
 }
 
 .section-title {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.leaderboards-section,
-.matches-section {
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  color: var(--color-accent);
+  background: var(--color-pick-bg);
+  border: var(--border-accent);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+[data-theme="dark"] .live-indicator {
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-accent);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.matches-list {
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
 }
 
 .empty-state {
-  padding: var(--space-12) var(--space-6);
+  padding: var(--space-16) var(--space-8);
   text-align: center;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-elevated);
-  border: var(--border-hairline);
-  border-radius: var(--radius-lg);
-}
-
-.empty-state p {
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
-}
-
-.empty-hint {
-  margin-top: var(--space-2);
-  font-size: var(--text-sm);
-  opacity: 0.7;
-}
-
-.leaderboards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-4);
-}
-
-.leaderboard-card {
-  cursor: pointer;
-}
-
-.leaderboard-name {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
-}
-
-.leaderboard-meta {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.loading-state {
-  padding: var(--space-8);
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.modal-content {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-4);
+}
+
+.empty-icon {
+  font-size: 64px;
+  opacity: 0.3;
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+.empty-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {
-  .welcome-title {
-    font-size: var(--text-3xl);
+  .home-view {
+    padding: var(--space-6) var(--space-4);
   }
 
-  .section-title {
-    font-size: var(--text-xl);
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .leaderboards-grid {
-    grid-template-columns: 1fr;
+  .page-title {
+    font-size: var(--text-4xl);
   }
 }
 </style>

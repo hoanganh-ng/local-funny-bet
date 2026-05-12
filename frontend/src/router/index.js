@@ -10,7 +10,8 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginView
+    component: LoginView,
+    meta: { public: true }
   },
   {
     path: '/',
@@ -19,22 +20,40 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/leaderboard/:id',
+    path: '/matches/:id',
+    name: 'Match',
+    component: MatchView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/leaderboards',
+    name: 'LeaderboardsList',
+    component: () => import('../views/LeaderboardsListView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/leaderboards/new',
+    name: 'CreateBoard',
+    component: () => import('../views/CreateBoardView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/leaderboards/:id',
     name: 'Leaderboard',
     component: LeaderboardView,
     meta: { requiresAuth: true }
   },
   {
-    path: '/match/:id',
-    name: 'Match',
-    component: MatchView,
+    path: '/history',
+    name: 'History',
+    component: () => import('../views/HistoryView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/join',
     name: 'Join',
     component: JoinView,
-    meta: { requiresAuth: true }
+    meta: { public: true }
   }
 ]
 
@@ -44,36 +63,54 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  if (to.path === '/auth/callback') {
-    const token = to.query.token
-    if (token) {
-      const authStore = useAuthStore()
+  const authStore = useAuthStore()
 
+  if (to.path === '/auth/callback') {
+    const success = to.query.success
+
+    if (success === 'true') {
       try {
-        const response = await fetch('/api/auth/me', {
+        // Exchange httpOnly refresh cookie for access token
+        const response = await fetch('/api/auth/exchange', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        })
+
+        if (!response.ok) {
+          next('/login?error=auth_failed')
+          return
+        }
+
+        const data = await response.json()
+
+        // Fetch user info
+        const userResponse = await fetch('/api/auth/me', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${data.access_token}`,
             'Content-Type': 'application/json'
           }
         })
 
-        if (response.ok) {
-          const user = await response.json()
-          authStore.setAuth(token, user)
+        if (userResponse.ok) {
+          const user = await userResponse.json()
+          authStore.setAuth(data.access_token, user)
         } else {
-          authStore.setAuth(token, {})
+          authStore.setAuth(data.access_token, null)
         }
-      } catch (err) {
-        console.error('Failed to fetch user info:', err)
-        authStore.setAuth(token, {})
-      }
 
-      next('/')
+        next('/')
+        return
+      } catch (err) {
+        console.error('OAuth callback error:', err)
+        next('/login?error=auth_failed')
+        return
+      }
+    } else {
+      next('/login?error=auth_failed')
       return
     }
   }
-
-  const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')

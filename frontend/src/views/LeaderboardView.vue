@@ -6,6 +6,7 @@ import { matchService } from '../services/match.service.js'
 import { predictionService } from '../services/prediction.service.js'
 import { leaderboardService } from '../services/leaderboard.service.js'
 import LeaderboardHeader from '../components/leaderboard/LeaderboardHeader.vue'
+import LeaderboardPodium from '../components/leaderboard/LeaderboardPodium.vue'
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable.vue'
 import MatchCard from '../components/common/MatchCard.vue'
 import PredictionForm from '../components/prediction/PredictionForm.vue'
@@ -98,7 +99,13 @@ async function onPredictionSuccess(matchId) {
           <div v-if="isLoadingScores" class="loading-state">
             Loading scores...
           </div>
-          <LeaderboardTable v-else :scores="scores" />
+          <template v-else>
+            <LeaderboardPodium :scores="scores" />
+            <div class="table-wrapper">
+              <h3 class="table-subtitle">Full Standings</h3>
+              <LeaderboardTable :scores="scores" />
+            </div>
+          </template>
         </section>
 
         <AdSlot position="between-matches" />
@@ -162,6 +169,20 @@ async function onPredictionSuccess(matchId) {
 .matches-section {
   display: flex;
   flex-direction: column;
+}
+
+.table-wrapper {
+  margin-top: var(--space-8);
+}
+
+.table-subtitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-4);
 }
 
 .loading-state {
