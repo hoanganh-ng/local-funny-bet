@@ -40,6 +40,7 @@ func main() {
 	}
 
 	userRepo := postgres.NewUserRepo(db)
+	refreshTokenRepo := postgres.NewRefreshTokenRepo(db)
 	matchRepo := postgres.NewMatchRepo(db)
 	predictionRepo := postgres.NewPredictionRepo(db)
 	leaderboardRepo := postgres.NewLeaderboardRepo(db)
@@ -60,7 +61,7 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
-	authService := auth.NewService(userRepo, googleProvider, tokenSigner, cfg.JWTRefreshSecret)
+	authService := auth.NewService(userRepo, refreshTokenRepo, googleProvider, tokenSigner, cfg.JWTRefreshSecret)
 	matchService := match.NewService(matchRepo, footballClient, tournamentRepo, leaderboardRepo, hub)
 	predictionService := predictionApp.NewService(predictionRepo, matchRepo, leaderboardRepo)
 	leaderboardService := leaderboardApp.NewService(leaderboardRepo, cfg.JWTSecret)

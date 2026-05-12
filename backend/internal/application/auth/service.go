@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,26 +12,20 @@ import (
 )
 
 type Service struct {
-	userRepo       user.Repository
-	provider       auth.Provider
-	tokenSigner    auth.TokenSigner
-	refreshSecret  string
-	refreshTokens  map[string]refreshToken
-	refreshTokenMu sync.RWMutex
+	userRepo         user.Repository
+	refreshTokenRepo auth.RefreshTokenRepository
+	provider         auth.Provider
+	tokenSigner      auth.TokenSigner
+	refreshSecret    string
 }
 
-type refreshToken struct {
-	userID    string
-	expiresAt time.Time
-}
-
-func NewService(userRepo user.Repository, provider auth.Provider, tokenSigner auth.TokenSigner, refreshSecret string) *Service {
+func NewService(userRepo user.Repository, refreshTokenRepo auth.RefreshTokenRepository, provider auth.Provider, tokenSigner auth.TokenSigner, refreshSecret string) *Service {
 	return &Service{
-		userRepo:      userRepo,
-		provider:      provider,
-		tokenSigner:   tokenSigner,
-		refreshSecret: refreshSecret,
-		refreshTokens: make(map[string]refreshToken),
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		provider:         provider,
+		tokenSigner:      tokenSigner,
+		refreshSecret:    refreshSecret,
 	}
 }
 
@@ -81,22 +74,17 @@ func (s *Service) HandleGoogleCallback(ctx context.Context, code string) (access
 }
 
 func (s *Service) RefreshToken(ctx context.Context, refreshTokenStr string) (string, error) {
-	s.refreshTokenMu.RLock()
-	rt, ok := s.refreshTokens[refreshTokenStr]
-	s.refreshTokenMu.RUnlock()
-
-	if !ok {
-		return "", fmt.Errorf("invalid refresh token: %w", fmt.Errorf("unauthorized"))
+	rt, err := s.refreshTokenRepo.GetByToken(ctx, refreshTokenStr)
+	if err != nil {
+		return "", fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	if time.Now().After(rt.expiresAt) {
-		s.refreshTokenMu.Lock()
-		delete(s.refreshTokens, refreshTokenStr)
-		s.refreshTokenMu.Unlock()
+	if time.Now().After(rt.ExpiresAt) {
+		_ = s.refreshTokenRepo.Delete(ctx, refreshTokenStr)
 		return "", fmt.Errorf("refresh token expired: %w", fmt.Errorf("unauthorized"))
 	}
 
-	u, err := s.userRepo.GetByID(ctx, rt.userID)
+	u, err := s.userRepo.GetByID(ctx, rt.UserID)
 	if err != nil {
 		return "", fmt.Errorf("getting user: %w", err)
 	}
@@ -110,22 +98,23 @@ func (s *Service) RefreshToken(ctx context.Context, refreshTokenStr string) (str
 }
 
 func (s *Service) RevokeToken(ctx context.Context, refreshTokenStr string) error {
-	s.refreshTokenMu.Lock()
-	delete(s.refreshTokens, refreshTokenStr)
-	s.refreshTokenMu.Unlock()
-	return nil
+	return s.refreshTokenRepo.Delete(ctx, refreshTokenStr)
 }
 
 func (s *Service) createRefreshToken(userID string) (string, error) {
 	token := uuid.New().String()
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
 
-	s.refreshTokenMu.Lock()
-	s.refreshTokens[token] = refreshToken{
-		userID:    userID,
-		expiresAt: expiresAt,
+	rt := &auth.RefreshToken{
+		Token:     token,
+		UserID:    userID,
+		ExpiresAt: expiresAt,
+		CreatedAt: time.Now(),
 	}
-	s.refreshTokenMu.Unlock()
+
+	if err := s.refreshTokenRepo.Create(context.Background(), rt); err != nil {
+		return "", fmt.Errorf("storing refresh token: %w", err)
+	}
 
 	return token, nil
 }
