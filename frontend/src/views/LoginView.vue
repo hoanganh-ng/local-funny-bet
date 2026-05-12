@@ -1,6 +1,19 @@
 <script setup>
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../store/auth.store.js'
 import { authService } from '../services/auth.service.js'
 import BaseButton from '../components/base/BaseButton.vue'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Redirect if already authenticated
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    router.push('/')
+  }
+})
 
 function handleLogin() {
   authService.login()

@@ -65,6 +65,12 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
+  // Redirect authenticated users away from /login
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    next('/')
+    return
+  }
+
   if (to.path === '/auth/callback') {
     const success = to.query.success
 

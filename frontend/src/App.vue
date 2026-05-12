@@ -1,25 +1,13 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from './store/auth.store.js'
 import SidebarNav from './components/common/SidebarNav.vue'
 import BottomTabBar from './components/common/BottomTabBar.vue'
 
 const route = useRoute()
-const authStore = useAuthStore()
 
 const showLayout = computed(() => {
   return route.meta.public !== true
-})
-
-onMounted(async () => {
-  // Try to rehydrate auth from httpOnly cookie on app boot
-  try {
-    await authStore.refresh()
-  } catch (err) {
-    // Refresh failed - user not logged in, silent fail
-    console.log('No valid session found')
-  }
 })
 </script>
 
