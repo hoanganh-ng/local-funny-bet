@@ -111,7 +111,7 @@ func getMigrationFiles(migrationsFS fs.FS) ([]string, error) {
 	var files []string
 	for _, entry := range entries {
 		name := entry.Name()
-		if !entry.IsDir() && strings.HasSuffix(name, ".sql") && !strings.Contains(name, "seed") {
+		if !entry.IsDir() && strings.HasSuffix(name, ".sql") {
 			files = append(files, name)
 		}
 	}
