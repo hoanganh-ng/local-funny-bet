@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 	"time"
 
@@ -11,25 +10,8 @@ import (
 	"wc2026/internal/domain/prediction"
 )
 
-func getTestDB(t *testing.T) *sql.DB {
-	t.Helper()
-
-	dbURL := os.Getenv("TEST_DATABASE_URL")
-	if dbURL == "" {
-		t.Skip("TEST_DATABASE_URL not set, skipping integration test")
-	}
-
-	db, err := NewDB(dbURL)
-	if err != nil {
-		t.Fatalf("failed to connect to test database: %v", err)
-	}
-
-	return db
-}
-
 func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
-	db := getTestDB(t)
-	defer db.Close()
+	db := setupTestDB(t)
 
 	ctx := context.Background()
 	repo := NewPredictionRepo(db)
@@ -40,6 +22,7 @@ func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
 	seedTestUser(t, db, userID)
 	seedTestMatch(t, db, matchID)
 
+	// Step 1: Insert prediction with value "home_win"
 	p1 := &prediction.Prediction{
 		ID:        uuid.New().String(),
 		UserID:    userID,
@@ -52,11 +35,12 @@ func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
 		t.Fatalf("first upsert failed: %v", err)
 	}
 
+	// Step 2: Upsert same user+match with value "draw"
 	p2 := &prediction.Prediction{
 		ID:        uuid.New().String(),
 		UserID:    userID,
 		MatchID:   matchID,
-		Value:     prediction.ValueAwayWin,
+		Value:     prediction.ValueDraw,
 		UpdatedAt: time.Now(),
 	}
 
@@ -64,6 +48,7 @@ func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
 		t.Fatalf("second upsert failed: %v", err)
 	}
 
+	// Step 3: Assert only ONE row exists
 	var count int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM predictions WHERE user_id = $1 AND match_id = $2", userID, matchID).Scan(&count)
 	if err != nil {
@@ -74,14 +59,25 @@ func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
 		t.Errorf("expected 1 prediction, got %d", count)
 	}
 
+	// Step 4: Assert surviving row has value "draw"
 	var value string
 	err = db.QueryRowContext(ctx, "SELECT value FROM predictions WHERE user_id = $1 AND match_id = $2", userID, matchID).Scan(&value)
 	if err != nil {
 		t.Fatalf("failed to get prediction value: %v", err)
 	}
 
-	if value != prediction.ValueAwayWin {
-		t.Errorf("expected value %s, got %s", prediction.ValueAwayWin, value)
+	if value != prediction.ValueDraw {
+		t.Errorf("expected value %s, got %s", prediction.ValueDraw, value)
+	}
+
+	// Step 5: Verify direct INSERT violates constraint (tests DB-level UNIQUE)
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO predictions (id, user_id, match_id, value, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, uuid.New().String(), userID, matchID, prediction.ValueAwayWin, time.Now())
+
+	if err == nil {
+		t.Error("expected constraint violation on duplicate insert, got nil")
 	}
 
 	cleanupTestPrediction(t, db, userID, matchID)
@@ -91,8 +87,9 @@ func TestPredictionUpsert_UniqueConstraint(t *testing.T) {
 
 func seedTestUser(t *testing.T, db *sql.DB, userID string) {
 	t.Helper()
+	email := userID + "@test.example.com"
 	_, err := db.Exec("INSERT INTO users (id, email, name, created_at) VALUES ($1, $2, $3, $4)",
-		userID, "test@example.com", "Test User", time.Now())
+		userID, email, "Test User", time.Now())
 	if err != nil {
 		t.Fatalf("failed to seed test user: %v", err)
 	}

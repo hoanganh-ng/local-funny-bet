@@ -11,8 +11,7 @@ import (
 )
 
 func TestLeaderboardRepo_GetScores(t *testing.T) {
-	db := getTestDB(t)
-	defer db.Close()
+	db := setupTestDB(t)
 
 	ctx := context.Background()
 	lbRepo := NewLeaderboardRepo(db)
@@ -20,10 +19,12 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 
 	userAID := uuid.New().String()
 	userBID := uuid.New().String()
+	userCID := uuid.New().String()
 	leaderboardID := uuid.New().String()
 
 	seedTestUser(t, db, userAID)
 	seedTestUser(t, db, userBID)
+	seedTestUser(t, db, userCID)
 
 	var tournamentID string
 	err := db.QueryRow("SELECT id FROM tournaments LIMIT 1").Scan(&tournamentID)
@@ -100,6 +101,17 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 		t.Fatalf("failed to add member B: %v", err)
 	}
 
+	memberC := &leaderboard.Member{
+		ID:            uuid.New().String(),
+		LeaderboardID: leaderboardID,
+		UserID:        userCID,
+		Role:          leaderboard.RoleMember,
+		JoinedAt:      time.Now(),
+	}
+	if err := lbRepo.AddMember(ctx, memberC); err != nil {
+		t.Fatalf("failed to add member C: %v", err)
+	}
+
 	predA1 := &prediction.Prediction{
 		ID:        uuid.New().String(),
 		UserID:    userAID,
@@ -166,15 +178,52 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 		t.Fatalf("failed to upsert prediction B3: %v", err)
 	}
 
+	// User C predictions: all incorrect (0 points)
+	predC1 := &prediction.Prediction{
+		ID:        uuid.New().String(),
+		UserID:    userCID,
+		MatchID:   match1ID,
+		Value:     prediction.ValueDraw, // match1: home won (2-1)
+		UpdatedAt: time.Now(),
+	}
+	if err := predRepo.Upsert(ctx, predC1); err != nil {
+		t.Fatalf("failed to upsert prediction C1: %v", err)
+	}
+
+	predC2 := &prediction.Prediction{
+		ID:        uuid.New().String(),
+		UserID:    userCID,
+		MatchID:   match2ID,
+		Value:     prediction.ValueHomeWin, // match2: draw (1-1)
+		UpdatedAt: time.Now(),
+	}
+	if err := predRepo.Upsert(ctx, predC2); err != nil {
+		t.Fatalf("failed to upsert prediction C2: %v", err)
+	}
+
+	predC3 := &prediction.Prediction{
+		ID:        uuid.New().String(),
+		UserID:    userCID,
+		MatchID:   match3ID,
+		Value:     prediction.ValueDraw, // match3: away won (0-3)
+		UpdatedAt: time.Now(),
+	}
+	if err := predRepo.Upsert(ctx, predC3); err != nil {
+		t.Fatalf("failed to upsert prediction C3: %v", err)
+	}
+
 	scores, err := lbRepo.GetScores(ctx, leaderboardID)
 	if err != nil {
 		t.Fatalf("failed to get scores: %v", err)
 	}
 
-	if len(scores) != 2 {
-		t.Fatalf("expected 2 scores, got %d", len(scores))
+	// Expected: A (2pts), B (1pt), C (0pts or absent)
+	// Query uses COUNT(*) which excludes users with no correct predictions
+	if len(scores) < 2 || len(scores) > 3 {
+		t.Fatalf("expected 2 or 3 scores (A, B, optionally C), got %d", len(scores))
 	}
 
+	// User A: 2 points (first place)
 	if scores[0].UserID != userAID {
 		t.Errorf("expected first user to be %s, got %s", userAID, scores[0].UserID)
 	}
@@ -182,6 +231,7 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 		t.Errorf("expected user A to have 2 points, got %d", scores[0].Points)
 	}
 
+	// User B: 1 point (second place)
 	if scores[1].UserID != userBID {
 		t.Errorf("expected second user to be %s, got %s", userBID, scores[1].UserID)
 	}
@@ -189,7 +239,13 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 		t.Errorf("expected user B to have 1 point, got %d", scores[1].Points)
 	}
 
-	_, err = db.Exec("DELETE FROM predictions WHERE user_id IN ($1, $2)", userAID, userBID)
+	// User C: 0 points (absent from results, since query uses COUNT with WHERE on correct predictions)
+	// GetScores uses COUNT(*) which only returns users with at least one correct prediction
+	if len(scores) == 3 {
+		t.Errorf("user C with 0 points should be absent from results, but got %d users", len(scores))
+	}
+
+	_, err = db.Exec("DELETE FROM predictions WHERE user_id IN ($1, $2, $3)", userAID, userBID, userCID)
 	if err != nil {
 		t.Logf("failed to cleanup predictions: %v", err)
 	}
@@ -211,4 +267,5 @@ func TestLeaderboardRepo_GetScores(t *testing.T) {
 
 	cleanupTestUser(t, db, userAID)
 	cleanupTestUser(t, db, userBID)
+	cleanupTestUser(t, db, userCID)
 }

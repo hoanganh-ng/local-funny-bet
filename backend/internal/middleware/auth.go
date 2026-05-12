@@ -18,20 +18,20 @@ func RequireAuth(verifier auth.TokenVerifier) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				respondError(w, http.StatusUnauthorized, "missing authorization header")
+				respondError(w, http.StatusUnauthorized, "unauthorized")
 				return
 			}
 
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				respondError(w, http.StatusUnauthorized, "invalid authorization header")
+				respondError(w, http.StatusUnauthorized, "unauthorized")
 				return
 			}
 
 			token := parts[1]
 			claims, err := verifier.Verify(token)
 			if err != nil {
-				respondError(w, http.StatusUnauthorized, "invalid token")
+				respondError(w, http.StatusUnauthorized, "unauthorized")
 				return
 			}
 
