@@ -3,10 +3,12 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth.store.js'
 import { authService } from '../services/auth.service.js'
+import { useTournament } from '../composables/useTournament.js'
 import BaseButton from '../components/base/BaseButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { tournament } = useTournament()
 
 // Redirect if already authenticated
 onMounted(() => {
@@ -25,7 +27,7 @@ function handleLogin() {
     <!-- Brand panel - desktop only -->
     <div class="brand-panel">
       <div class="brand-content">
-        <p class="tournament-label">Continental Cup 2026</p>
+        <p class="tournament-label">{{ tournament?.name || 'Continental Cup 2026' }}</p>
         <h1 class="headline">
           Pick the<br>
           <span class="accent-word">winners.</span><br>

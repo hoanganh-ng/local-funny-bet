@@ -70,6 +70,7 @@ func main() {
 	matchHandler := httpAdapters.NewMatchHandler(matchService)
 	predictionHandler := httpAdapters.NewPredictionHandler(predictionService)
 	leaderboardHandler := httpAdapters.NewLeaderboardHandler(leaderboardService)
+	tournamentHandler := httpAdapters.NewTournamentHandler(tournamentRepo)
 	wsHandler := httpAdapters.NewWebSocketHandler(hub)
 	healthHandler := httpAdapters.NewHealthHandler(db)
 
@@ -85,6 +86,8 @@ func main() {
 
 	mux.HandleFunc("GET /matches", matchHandler.ListMatches)
 	mux.HandleFunc("GET /matches/{id}", matchHandler.GetMatch)
+
+	mux.HandleFunc("GET /tournaments/active", tournamentHandler.GetActive)
 
 	mux.HandleFunc("GET /ws", wsHandler.Handle)
 

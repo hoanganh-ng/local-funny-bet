@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/auth.store.js'
 import { useLeaderboardStore } from '../../store/leaderboard.store.js'
 import { useTheme } from '../../composables/useTheme.js'
+import { useTournament } from '../../composables/useTournament.js'
 import BaseButton from '../base/BaseButton.vue'
 import { ref } from 'vue'
 
@@ -11,6 +12,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const leaderboardStore = useLeaderboardStore()
 const { theme, toggle: toggleTheme } = useTheme()
+const { tournament } = useTournament()
 
 function isActive(path) {
   return route.path === path || route.path.startsWith(path + '/')
@@ -51,8 +53,8 @@ async function handleLogout() {
       </div>
 
       <div class="tournament-info">
-        <p class="tournament-stage">Group Stage · Matchday 2</p>
-        <p class="tournament-name">Continental Cup 2026</p>
+        <!-- <p class="tournament-stage">Group Stage · Matchday 2</p> --> No Data Yet
+        <p class="tournament-name">{{ tournament?.name || 'Continental Cup 2026' }}</p>
       </div>
     </div>
 
