@@ -13,6 +13,8 @@ type Match struct {
 	TournamentID string    `json:"tournament_id"`
 	HomeTeam     string    `json:"home_team"`
 	AwayTeam     string    `json:"away_team"`
+	HomeTeamCode string    `json:"home_team_code"` // FIFA 3-letter code, e.g. "MEX", "KOR", "RSA"
+	AwayTeamCode string    `json:"away_team_code"` // FIFA 3-letter code, e.g. "MEX", "KOR", "RSA"
 	HomeScore    *int      `json:"home_score"`
 	AwayScore    *int      `json:"away_score"`
 	KickoffAt    time.Time `json:"kickoff_at"`

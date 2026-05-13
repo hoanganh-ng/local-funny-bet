@@ -9,7 +9,11 @@ const isLoading = ref(true)
 
 onMounted(async () => {
   try {
-    matches.value = await matchService.list()
+    const [scheduled, live] = await Promise.all([
+      matchService.list('scheduled'),
+      matchService.list('live')
+    ])
+    matches.value = [...live, ...scheduled]
   } catch (error) {
     console.error('Failed to load matches:', error)
   } finally {

@@ -1,0 +1,124 @@
+
+<h2 class="sr-only">Final redesigned sidebar for WC2026 Predictor app</h2>
+
+<style>
+.nav-item:hover { background: rgba(255,255,255,0.05) !important; }
+.nav-item:hover .nav-label { color: #EDEDEF !important; }
+.nav-item:hover .nav-icon { color: #EDEDEF !important; }
+.user-row:hover { background: rgba(255,255,255,0.05) !important; }
+.icon-btn:hover { background: rgba(255,255,255,0.09) !important; color: #EDEDEF !important; }
+.tournament-pill:hover { background: rgba(94,106,210,0.13) !important; border-color: rgba(94,106,210,0.35) !important; }
+</style>
+
+<div style="display:flex; padding:40px; justify-content:center; align-items:flex-start; gap:40px;">
+
+  <div style="display:flex; flex-direction:column; align-items:flex-start; gap:8px;">
+    <span style="font-size:11px; color:var(--color-text-secondary); font-family:var(--font-mono); letter-spacing:0.05em;">Before</span>
+    <div style="width:220px; height:520px; background:#09090c; border:0.5px solid rgba(255,255,255,0.10); border-radius:10px; display:flex; flex-direction:column; padding:14px 0; box-sizing:border-box; font-family:'Inter',system-ui,sans-serif; overflow:hidden; opacity:0.4; filter:grayscale(0.3);">
+      <div style="padding:6px 14px 12px; display:flex; align-items:center; gap:8px;">
+        <div style="width:28px;height:28px;background:#5E6AD2;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-ball-football" style="color:white;font-size:14px;" aria-hidden="true"></i>
+        </div>
+        <div>
+          <p style="color:#EDEDEF;font-size:13px;font-weight:500;margin:0;line-height:1.2;">Predictor</p>
+          <p style="color:#8A8F98;font-size:10px;margin:0;letter-spacing:0.06em;">INTERNAL</p>
+        </div>
+      </div>
+      <p style="color:#8A8F98;font-size:12px;margin:0 0 14px;padding:0 14px;">FIFA World Cup 2026</p>
+      <div style="height:0.5px;background:rgba(255,255,255,0.07);margin:0 10px 10px;"></div>
+      <div style="padding:0 6px;">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(94,106,210,0.16);border-radius:7px;margin-bottom:2px;">
+          <span aria-hidden="true">⚽</span><span style="color:#EDEDEF;font-size:12px;font-weight:500;">Matches</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;margin-bottom:2px;">
+          <span aria-hidden="true">🏆</span><span style="color:#8A8F98;font-size:12px;flex:1;">Leaderboards</span>
+          <span style="background:rgba(255,255,255,0.10);color:#8A8F98;font-size:10px;padding:1px 6px;border-radius:9999px;">2</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;">
+          <span aria-hidden="true">📊</span><span style="color:#8A8F98;font-size:12px;">History</span>
+        </div>
+      </div>
+      <div style="padding:16px 10px 0;">
+        <div style="display:flex;align-items:center;padding:4px 6px 8px;">
+          <span style="color:rgba(255,255,255,0.28);font-size:9.5px;font-weight:600;letter-spacing:0.08em;flex:1;">YOUR BOARDS</span>
+          <span style="color:rgba(255,255,255,0.28);font-size:16px;">+</span>
+        </div>
+        <div style="padding:5px 6px;color:#8A8F98;font-size:12px;">• 3rd board</div>
+        <div style="padding:5px 6px;color:#8A8F98;font-size:12px;">• 1st board</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="padding:10px 6px 0;border-top:0.5px solid rgba(255,255,255,0.07);margin:0 4px;">
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;">
+          <div style="width:26px;height:26px;border-radius:50%;background:#5E6AD2;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;">N</div>
+          <div style="flex:1;min-width:0;">
+            <p style="color:#EDEDEF;font-size:11.5px;font-weight:500;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nguyễn Hoàng Anh</p>
+            <p style="color:#8A8F98;font-size:10px;margin:0;">hoanganh.nguy...</p>
+          </div>
+          <span aria-hidden="true">☀️</span>
+        </div>
+        <p style="color:#8A8F98;font-size:11px;margin:6px 0 0;text-align:center;">Log out</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; align-items:flex-start; gap:8px;">
+    <span style="font-size:11px; color:var(--color-text-secondary); font-family:var(--font-mono); letter-spacing:0.05em;">After</span>
+    <div style="width:220px; height:520px; background:#060609; border:0.5px solid rgba(255,255,255,0.09); border-radius:10px; display:flex; flex-direction:column; padding:14px 0; box-sizing:border-box; font-family:'Inter',system-ui,sans-serif; overflow:hidden;">
+
+      <div style="display:flex;align-items:center;gap:9px;padding:6px 14px 14px;">
+        <div style="width:28px;height:28px;background:#5E6AD2;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-ball-football" style="color:white;font-size:14px;" aria-hidden="true"></i>
+        </div>
+        <span style="color:#EDEDEF;font-size:13px;font-weight:500;letter-spacing:-0.01em;">Predictor</span>
+      </div>
+
+      <div style="padding:0 10px 14px;">
+        <div class="tournament-pill" style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:rgba(94,106,210,0.08);border:0.5px solid rgba(94,106,210,0.22);border-radius:7px;cursor:pointer;transition:all 150ms ease;">
+          <i class="ti ti-world" style="color:#5E6AD2;font-size:13px;flex-shrink:0;" aria-hidden="true"></i>
+          <span style="color:#EDEDEF;font-size:11.5px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">FIFA World Cup 2026</span>
+          <i class="ti ti-chevron-down" style="color:rgba(255,255,255,0.28);font-size:11px;flex-shrink:0;" aria-hidden="true"></i>
+        </div>
+      </div>
+
+      <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:0 10px 10px;"></div>
+
+      <nav style="padding:0 6px;" aria-label="Main navigation">
+        <div class="nav-item" style="display:flex;align-items:center;gap:9px;padding:9px 10px;background:rgba(94,106,210,0.14);border-radius:7px;margin-bottom:2px;cursor:pointer;">
+          <i class="ti ti-ball-football nav-icon" style="color:#5E6AD2;font-size:15px;" aria-hidden="true"></i>
+          <span class="nav-label" style="color:#EDEDEF;font-size:12.5px;font-weight:500;">Matches</span>
+        </div>
+        <div class="nav-item" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;margin-bottom:2px;cursor:pointer;">
+          <i class="ti ti-trophy nav-icon" style="color:#8A8F98;font-size:15px;" aria-hidden="true"></i>
+          <span class="nav-label" style="color:#8A8F98;font-size:12.5px;flex:1;">Leaderboards</span>
+          <span style="background:rgba(255,255,255,0.07);color:#8A8F98;font-size:10.5px;font-weight:500;padding:2px 6px;border-radius:4px;line-height:1.5;">2</span>
+        </div>
+        <div class="nav-item" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;">
+          <i class="ti ti-history nav-icon" style="color:#8A8F98;font-size:15px;" aria-hidden="true"></i>
+          <span class="nav-label" style="color:#8A8F98;font-size:12.5px;">History</span>
+        </div>
+      </nav>
+
+      <div style="flex:1;"></div>
+
+      <div style="padding:10px 6px 0;border-top:0.5px solid rgba(255,255,255,0.06);margin:0 4px 0;">
+        <div class="user-row" style="display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:7px;cursor:pointer;transition:background 120ms ease;">
+          <div style="width:27px;height:27px;border-radius:50%;background:#5E6AD2;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;color:white;flex-shrink:0;">N</div>
+          <div style="flex:1;min-width:0;">
+            <p style="color:#EDEDEF;font-size:12px;font-weight:500;margin:0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nguyễn Hoàng Anh</p>
+            <p style="color:rgba(255,255,255,0.28);font-size:10.5px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">hoanganh.nguy...</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:1px;flex-shrink:0;">
+            <button class="icon-btn" style="background:none;border:none;color:rgba(255,255,255,0.28);cursor:pointer;padding:4px;border-radius:5px;line-height:1;display:flex;transition:all 120ms ease;" aria-label="Toggle theme">
+              <i class="ti ti-sun" style="font-size:14px;" aria-hidden="true"></i>
+            </button>
+            <button class="icon-btn" style="background:none;border:none;color:rgba(255,255,255,0.28);cursor:pointer;padding:4px;border-radius:5px;line-height:1;display:flex;transition:all 120ms ease;" aria-label="Log out">
+              <i class="ti ti-logout" style="font-size:14px;" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

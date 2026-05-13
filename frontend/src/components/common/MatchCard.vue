@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import BaseBadge from '../base/BaseBadge.vue'
+import MatchStatusBadge from '../match/MatchStatusBadge.vue'
 import OutcomePicker from '../prediction/OutcomePicker.vue'
 import { predictionService } from '../../services/prediction.service.js'
 
@@ -25,6 +25,17 @@ const isLocked = computed(() => {
   return new Date(props.match.kickoffAt) <= new Date()
 })
 
+// Fix 1: "Jun 12 · 02:00" format
+const formattedTime = computed(() => {
+  const d = new Date(props.match.kickoffAt)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const month = months[d.getMonth()]
+  const day = d.getDate()
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${month} ${day} · ${hh}:${mm}`
+})
+
 const timeUntilKickoff = ref(null)
 const showCountdown = computed(() => {
   if (!timeUntilKickoff.value) return false
@@ -42,13 +53,11 @@ let countdownInterval = null
 
 onMounted(() => {
   updateCountdown()
-  countdownInterval = setInterval(updateCountdown, 60000) // Update every minute
+  countdownInterval = setInterval(updateCountdown, 60000)
 })
 
 onUnmounted(() => {
-  if (countdownInterval) {
-    clearInterval(countdownInterval)
-  }
+  if (countdownInterval) clearInterval(countdownInterval)
 })
 
 function updateCountdown() {
@@ -76,29 +85,29 @@ async function handlePredictionChange(newPrediction) {
 
 <template>
   <div class="match-card">
-    <!-- Header with badge and time -->
+    <!-- Header: time + badge -->
     <div class="match-header">
-      <div class="match-meta">
-        <span class="match-time">{{ new Date(match.kickoffAt).toLocaleString('vi-VN') }}</span>
-      </div>
-      <BaseBadge :status="match.status" />
+      <span class="match-time">{{ formattedTime }}</span>
+      <MatchStatusBadge :status="match.status" />
     </div>
 
     <!-- Teams and score -->
     <div class="match-teams">
       <div class="team home-team">
-        <div class="team-flag">{{ match.homeTeam.slice(0, 3).toUpperCase() }}</div>
+        <!-- Fix 2: team code badge from API field -->
+        <span v-if="match.homeTeamCode" class="team-code">{{ match.homeTeamCode }}</span>
         <span class="team-name">{{ match.homeTeam }}</span>
         <span v-if="showScore" class="score">{{ match.homeScore ?? '-' }}</span>
       </div>
 
+      <!-- Fix 3: compact VS divider -->
       <div class="score-divider">
         <span v-if="!showScore" class="vs-label">vs</span>
         <span v-else class="score-sep">-</span>
       </div>
 
       <div class="team away-team">
-        <div class="team-flag">{{ match.awayTeam.slice(0, 3).toUpperCase() }}</div>
+        <span v-if="match.awayTeamCode" class="team-code">{{ match.awayTeamCode }}</span>
         <span class="team-name">{{ match.awayTeam }}</span>
         <span v-if="showScore" class="score">{{ match.awayScore ?? '-' }}</span>
       </div>
@@ -128,8 +137,8 @@ async function handlePredictionChange(newPrediction) {
 .match-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-5);
+  gap: var(--space-3);
+  padding: var(--space-4);
   background: var(--color-surface);
   border: var(--border-hairline);
   transition: all var(--duration-fast) var(--ease-default);
@@ -150,29 +159,22 @@ async function handlePredictionChange(newPrediction) {
   border-radius: 0;
 }
 
-/* ──── Header ──── */
+/* ── Header ── */
 .match-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.match-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.match-time {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
 }
 
-.match-dot {
-  color: var(--color-border);
-}
-
-/* ──── Teams ──── */
+/* ── Teams — Fix 3: tighter gap ── */
 .match-teams {
   display: flex;
   flex-direction: column;
@@ -182,41 +184,34 @@ async function handlePredictionChange(newPrediction) {
 .team {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
 }
 
-.home-team {
-  flex-direction: row;
-}
-
+.home-team,
 .away-team {
   flex-direction: row;
 }
 
-.team-flag {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  background: var(--color-bg-elevated);
-  border: var(--border-hairline);
+/* Fix 2: team code badge */
+.team-code {
   font-family: var(--font-mono);
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
-[data-theme="dark"] .team-flag {
-  border-radius: var(--radius-sm);
+[data-theme="light"] .team-code {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .team-name {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  flex: 1;
 }
 
 .score {
@@ -224,14 +219,15 @@ async function handlePredictionChange(newPrediction) {
   font-weight: var(--font-black);
   color: var(--color-text-primary);
   font-family: var(--font-mono);
-  min-width: 48px;
+  min-width: var(--space-12);
   text-align: center;
   letter-spacing: var(--tracking-tight);
 }
 
+/* Fix 3: no extra vertical padding on divider */
 .score-divider {
   text-align: center;
-  padding: var(--space-1) 0;
+  margin: 0;
 }
 
 .vs-label {
@@ -248,7 +244,7 @@ async function handlePredictionChange(newPrediction) {
   font-weight: var(--font-light);
 }
 
-/* ──── Countdown ──── */
+/* ── Countdown ── */
 .countdown-bar {
   display: flex;
   align-items: center;
@@ -263,8 +259,8 @@ async function handlePredictionChange(newPrediction) {
 
 [data-theme="dark"] .countdown-bar {
   border-radius: var(--radius-sm);
-  background: rgba(210,153,34,0.1);
-  border-color: rgba(210,153,34,0.3);
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
 }
 
 .countdown-icon {
@@ -277,7 +273,7 @@ async function handlePredictionChange(newPrediction) {
   font-weight: var(--font-medium);
 }
 
-/* ──── Locked message ──── */
+/* ── Locked message ── */
 .locked-message {
   text-align: center;
   padding: var(--space-2);
@@ -286,5 +282,18 @@ async function handlePredictionChange(newPrediction) {
   color: var(--color-text-disabled);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
+}
+
+/* Fix 4: desktop button sizing — delegated to OutcomePicker via CSS custom props */
+@media (min-width: 769px) {
+  .match-card :deep(.outcome-btn) {
+    height: var(--space-12);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .match-card :deep(.outcome-sublabel) {
+    font-size: var(--text-sm);
+  }
 }
 </style>

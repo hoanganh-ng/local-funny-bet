@@ -6,6 +6,8 @@ function transformMatch(match) {
     tournamentId: match.tournament_id,
     homeTeam: match.home_team,
     awayTeam: match.away_team,
+    homeTeamCode: match.home_team_code,
+    awayTeamCode: match.away_team_code,
     homeScore: match.home_score,
     awayScore: match.away_score,
     kickoffAt: match.kickoff_at,

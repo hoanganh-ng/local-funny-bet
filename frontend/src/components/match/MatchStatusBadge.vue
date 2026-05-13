@@ -1,74 +1,81 @@
 <script setup>
 import { computed } from 'vue'
-import BaseBadge from '../base/BaseBadge.vue'
 
 const props = defineProps({
   status: {
     type: String,
     required: true,
     validator: (val) => ['scheduled', 'live', 'finished'].includes(val)
-  },
-  kickoffAt: {
-    type: String,
-    default: null
   }
 })
 
-const badgeText = computed(() => {
-  if (props.status === 'scheduled' && props.kickoffAt) {
-    const date = new Date(props.kickoffAt)
-    const month = date.toLocaleDateString('en-US', { month: 'short' })
-    const day = date.getDate()
-    const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-    return `${month} ${day} · ${time}`
-  }
-  if (props.status === 'live') return 'LIVE'
-  if (props.status === 'finished') return 'FT'
-  return props.status
-})
-
-const badgeClass = computed(() => {
-  if (props.status === 'live') return 'live'
-  if (props.status === 'finished') return 'finished'
-  return 'scheduled'
-})
+const badgeClass = computed(() => `badge--${props.status}`)
 </script>
 
 <template>
-  <BaseBadge :class="badgeClass">{{ badgeText }}</BaseBadge>
+  <span class="badge" :class="badgeClass" :aria-label="`Status: ${status}`">
+    <span v-if="status === 'live'" class="live-dot" aria-hidden="true" />
+    <slot>{{ status === 'finished' ? 'FT' : status }}</slot>
+  </span>
 </template>
 
 <style scoped>
-.scheduled {
-  color: var(--color-status-scheduled);
-  border-color: var(--color-border);
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: var(--leading-none);
+  border-radius: var(--radius-full);
+  border: none;
 }
 
-.live {
+.badge--scheduled {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-secondary);
+}
+
+[data-theme="light"] .badge--scheduled {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-text-secondary);
+}
+
+.badge--live {
+  background: rgba(94, 106, 210, 0.15);
   color: var(--color-status-live);
-  border-color: var(--color-status-live);
-  animation: pulse var(--duration-slow) var(--ease-default) infinite;
 }
 
-[data-theme="light"] .live {
-  font-weight: var(--font-bold);
-  border-width: 2px;
-  animation: none;
+[data-theme="light"] .badge--live {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--color-status-live);
 }
 
-.finished {
-  color: var(--color-status-finished);
-  border-color: var(--color-border);
+.badge--finished {
+  background: transparent;
+  color: var(--color-text-disabled);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 var(--color-accent-glow);
-  }
-  50% {
-    opacity: 0.8;
-    box-shadow: 0 0 20px var(--color-accent-glow);
-  }
+/* Live dot */
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-status-live);
+  flex-shrink: 0;
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+[data-theme="light"] .live-dot {
+  background: var(--color-status-live);
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
 </style>

@@ -88,6 +88,7 @@
   --radius-md:   8px;
   --radius-lg:   16px;
   --radius-pill: 9999px;
+  --radius-full: 9999px;
 
   /* Motion */
   --duration-fast: 200ms;
@@ -97,10 +98,26 @@
   --ease-default:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-hover:    ease-out;
 
+  /* Status colors */
+  --color-status-scheduled: #8A8F98;
+  --color-status-live:      #5E6AD2;
+  --color-status-live-dim:  rgba(94, 106, 210, 0.4);
+  --color-status-finished:  rgba(255,255,255,0.30);
+
+  /* Warning colors */
+  --color-warning-bg:     rgba(210, 153, 34, 0.1);
+  --color-warning-border: rgba(210, 153, 34, 0.3);
+
+  /* Line heights */
+  --leading-none:   1;
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+
   /* Spacing */
   --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
   --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
   --space-8: 32px;  --space-10: 40px; --space-12: 48px;
+  --space-16: 64px;
 
   /* Layout */
   --sidebar-w:       300px;
@@ -192,11 +209,22 @@
   --tracking-normal: 0;
   --tracking-wide: 0.05em;
 
+  /* Status colors */
+  --color-status-scheduled: #525252;
+  --color-status-live:      #000000;
+  --color-status-live-dim:  #525252;
+  --color-status-finished:  #A3A3A3;
+
+  /* Warning colors */
+  --color-warning-bg:     rgba(0, 0, 0, 0.05);
+  --color-warning-border: rgba(0, 0, 0, 0.15);
+
   /* Radius — zero everywhere, non-negotiable */
   --radius-sm:   0px;
   --radius-md:   0px;
   --radius-lg:   0px;
   --radius-pill: 0px;
+  --radius-full: 0px;
 
   /* Motion — binary, no easing */
   --duration-fast: 80ms;
@@ -206,10 +234,16 @@
   --ease-default:  step-end;
   --ease-hover:    step-end;
 
+  /* Line heights */
+  --leading-none:   1;
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+
   /* Spacing (same scale) */
   --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
   --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
   --space-8: 32px;  --space-10: 40px; --space-12: 48px;
+  --space-16: 64px;
 
   /* Layout (same) */
   --sidebar-w:       300px;

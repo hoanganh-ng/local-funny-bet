@@ -20,8 +20,8 @@ func NewMatchRepo(db *sql.DB) *MatchRepo {
 
 func (r *MatchRepo) GetByID(ctx context.Context, id string) (*match.Match, error) {
 	query := `
-		SELECT id, tournament_id, home_team, away_team, home_score, away_score,
-		       kickoff_at, status, external_id
+		SELECT id, tournament_id, home_team, away_team, home_team_code, away_team_code,
+		       home_score, away_score, kickoff_at, status, external_id
 		FROM matches
 		WHERE id = $1
 	`
@@ -35,6 +35,8 @@ func (r *MatchRepo) GetByID(ctx context.Context, id string) (*match.Match, error
 		&m.TournamentID,
 		&m.HomeTeam,
 		&m.AwayTeam,
+		&m.HomeTeamCode,
+		&m.AwayTeamCode,
 		&homeScore,
 		&awayScore,
 		&m.KickoffAt,
@@ -66,8 +68,8 @@ func (r *MatchRepo) GetByID(ctx context.Context, id string) (*match.Match, error
 
 func (r *MatchRepo) List(ctx context.Context, status string) ([]*match.Match, error) {
 	query := `
-		SELECT id, tournament_id, home_team, away_team, home_score, away_score,
-		       kickoff_at, status, external_id
+		SELECT id, tournament_id, home_team, away_team, home_team_code, away_team_code,
+		       home_score, away_score, kickoff_at, status, external_id
 		FROM matches
 	`
 
@@ -96,6 +98,8 @@ func (r *MatchRepo) List(ctx context.Context, status string) ([]*match.Match, er
 			&m.TournamentID,
 			&m.HomeTeam,
 			&m.AwayTeam,
+			&m.HomeTeamCode,
+			&m.AwayTeamCode,
 			&homeScore,
 			&awayScore,
 			&m.KickoffAt,
@@ -130,12 +134,14 @@ func (r *MatchRepo) List(ctx context.Context, status string) ([]*match.Match, er
 
 func (r *MatchRepo) Upsert(ctx context.Context, m *match.Match) error {
 	query := `
-		INSERT INTO matches (id, tournament_id, home_team, away_team, home_score, away_score,
-		                     kickoff_at, status, external_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO matches (id, tournament_id, home_team, away_team, home_team_code, away_team_code,
+		                     home_score, away_score, kickoff_at, status, external_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO UPDATE SET
 			home_team = EXCLUDED.home_team,
 			away_team = EXCLUDED.away_team,
+			home_team_code = EXCLUDED.home_team_code,
+			away_team_code = EXCLUDED.away_team_code,
 			home_score = EXCLUDED.home_score,
 			away_score = EXCLUDED.away_score,
 			kickoff_at = EXCLUDED.kickoff_at,
@@ -160,6 +166,8 @@ func (r *MatchRepo) Upsert(ctx context.Context, m *match.Match) error {
 		m.TournamentID,
 		m.HomeTeam,
 		m.AwayTeam,
+		m.HomeTeamCode,
+		m.AwayTeamCode,
 		homeScore,
 		awayScore,
 		m.KickoffAt,
@@ -186,12 +194,14 @@ func (r *MatchRepo) UpsertMany(ctx context.Context, matches []*match.Match) erro
 	defer tx.Rollback()
 
 	query := `
-		INSERT INTO matches (id, tournament_id, home_team, away_team, home_score, away_score,
-		                     kickoff_at, status, external_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO matches (id, tournament_id, home_team, away_team, home_team_code, away_team_code,
+		                     home_score, away_score, kickoff_at, status, external_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO UPDATE SET
 			home_team = EXCLUDED.home_team,
 			away_team = EXCLUDED.away_team,
+			home_team_code = EXCLUDED.home_team_code,
+			away_team_code = EXCLUDED.away_team_code,
 			home_score = EXCLUDED.home_score,
 			away_score = EXCLUDED.away_score,
 			kickoff_at = EXCLUDED.kickoff_at,
@@ -223,6 +233,8 @@ func (r *MatchRepo) UpsertMany(ctx context.Context, matches []*match.Match) erro
 			m.TournamentID,
 			m.HomeTeam,
 			m.AwayTeam,
+			m.HomeTeamCode,
+			m.AwayTeamCode,
 			homeScore,
 			awayScore,
 			m.KickoffAt,

@@ -37,6 +37,8 @@ func mapMatch(am apiMatch) (*match.Match, error) {
 		TournamentID: "",
 		HomeTeam:     am.HomeTeam.Name,
 		AwayTeam:     am.AwayTeam.Name,
+		HomeTeamCode: am.HomeTeam.TLA,
+		AwayTeamCode: am.AwayTeam.TLA,
 		HomeScore:    am.Score.FullTime.Home,
 		AwayScore:    am.Score.FullTime.Away,
 		KickoffAt:    kickoffAt,

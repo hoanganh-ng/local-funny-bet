@@ -75,6 +75,7 @@ type apiMatch struct {
 
 type apiTeam struct {
 	Name string `json:"name"`
+	TLA  string `json:"tla"`
 }
 
 type apiScore struct {
