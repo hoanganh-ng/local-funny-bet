@@ -59,6 +59,30 @@
   --font-body:    "Inter", "Geist Sans", system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", monospace;
 
+  /* Font weights */
+  --font-light:    300;
+  --font-medium:   500;
+  --font-semibold: 600;
+  --font-bold:     700;
+  --font-black:    900;
+
+  /* Font sizes */
+  --text-xs:   11px;
+  --text-sm:   12.5px;
+  --text-base: 14px;
+  --text-lg:   16px;
+  --text-xl:   18px;
+  --text-2xl:  20px;
+  --text-3xl:  24px;
+  --text-4xl:  30px;
+  --text-5xl:  36px;
+  --text-6xl:  48px;
+
+  /* Letter spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+
   /* Radius */
   --radius-sm:   6px;
   --radius-md:   8px;
@@ -79,8 +103,9 @@
   --space-8: 32px;  --space-10: 40px; --space-12: 48px;
 
   /* Layout */
-  --sidebar-w:    300px;
-  --bottom-nav-h: 64px;
+  --sidebar-w:       300px;
+  --bottom-nav-h:    64px;
+  --mobile-header-h: 56px;
 }
 
 /* ─────────────────────────────────────────────────────────────── */
@@ -143,6 +168,30 @@
   --font-body:    "Source Serif 4", Georgia, serif;
   --font-mono:    "JetBrains Mono", monospace;
 
+  /* Font weights (same) */
+  --font-light:    300;
+  --font-medium:   500;
+  --font-semibold: 600;
+  --font-bold:     700;
+  --font-black:    900;
+
+  /* Font sizes (same) */
+  --text-xs:   11px;
+  --text-sm:   12.5px;
+  --text-base: 14px;
+  --text-lg:   16px;
+  --text-xl:   18px;
+  --text-2xl:  20px;
+  --text-3xl:  24px;
+  --text-4xl:  30px;
+  --text-5xl:  36px;
+  --text-6xl:  48px;
+
+  /* Letter spacing (same) */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+
   /* Radius — zero everywhere, non-negotiable */
   --radius-sm:   0px;
   --radius-md:   0px;
@@ -163,6 +212,7 @@
   --space-8: 32px;  --space-10: 40px; --space-12: 48px;
 
   /* Layout (same) */
-  --sidebar-w:    300px;
-  --bottom-nav-h: 64px;
+  --sidebar-w:       300px;
+  --bottom-nav-h:    64px;
+  --mobile-header-h: 56px;
 }

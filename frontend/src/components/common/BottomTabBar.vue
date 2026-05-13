@@ -1,7 +1,9 @@
 <script setup>
 import { useRoute } from 'vue-router'
+import { useUiStore } from '../../store/ui.store.js'
 
 const route = useRoute()
+const uiStore = useUiStore()
 
 function isActive(path) {
   if (path === '/') {
@@ -12,19 +14,19 @@ function isActive(path) {
 </script>
 
 <template>
-  <nav class="bottom-tab-bar">
+  <nav class="bottom-tab-bar" :data-hidden="uiStore.showSidebarOnMobile">
     <router-link to="/" class="tab" :class="{ active: isActive('/') }">
-      <span class="tab-icon">⚽</span>
+      <i class="ti ti-ball-football tab-icon" aria-hidden="true"></i>
       <span class="tab-label">Matches</span>
     </router-link>
 
     <router-link to="/leaderboards" class="tab" :class="{ active: isActive('/leaderboards') }">
-      <span class="tab-icon">🏆</span>
+      <i class="ti ti-trophy tab-icon" aria-hidden="true"></i>
       <span class="tab-label">Boards</span>
     </router-link>
 
     <router-link to="/history" class="tab" :class="{ active: isActive('/history') }">
-      <span class="tab-icon">📊</span>
+      <i class="ti ti-history tab-icon" aria-hidden="true"></i>
       <span class="tab-label">History</span>
     </router-link>
   </nav>
@@ -91,7 +93,7 @@ function isActive(path) {
 }
 
 .tab-icon {
-  font-size: var(--text-2xl);
+  font-size: 20px;
 }
 
 .tab-label {
@@ -102,8 +104,15 @@ function isActive(path) {
   letter-spacing: var(--tracking-wide);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .bottom-tab-bar {
+    display: none;
+  }
+}
+
+/* Hide on mobile when sidebar toggle is active */
+@media (max-width: 768px) {
+  .bottom-tab-bar[data-hidden="true"] {
     display: none;
   }
 }
