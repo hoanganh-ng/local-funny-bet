@@ -53,7 +53,6 @@ async function handleLogout() {
       <div class="tournament-info">
         <p class="tournament-stage">Group Stage · Matchday 2</p>
         <p class="tournament-name">Continental Cup 2026</p>
-        <p class="tournament-progress">8 / 16 matches played</p>
       </div>
     </div>
 
@@ -99,7 +98,6 @@ async function handleLogout() {
         >
           <span class="board-indicator">●</span>
           <span class="board-name">{{ board.name }}</span>
-          <span class="board-rank">#{{ board.userRank || 3 }}</span>
         </button>
       </div>
     </div>
@@ -213,11 +211,6 @@ async function handleLogout() {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-}
-
-.tournament-progress {
-  font-size: var(--text-xs);
-  color: var(--color-text-disabled);
 }
 
 /* ──── Main Nav ──── */
@@ -388,13 +381,6 @@ async function handleLogout() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.board-rank {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  color: var(--color-text-disabled);
 }
 
 /* ──── Footer ──── */

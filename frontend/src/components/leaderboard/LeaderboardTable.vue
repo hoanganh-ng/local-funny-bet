@@ -23,8 +23,6 @@ const authStore = useAuthStore()
         <div class="header-cell header-avatar"></div>
         <div class="header-cell header-name">Player</div>
         <div class="header-cell header-points">Points</div>
-        <div class="header-cell header-streak">Streak</div>
-        <div class="header-cell header-trend">Trend</div>
       </div>
       <div class="scores-list">
         <ScoreRow
@@ -33,8 +31,6 @@ const authStore = useAuthStore()
           :rank="index + 1"
           :user="score.user"
           :points="score.points"
-          :streak="score.streak || 0"
-          :trend="score.trend || 'same'"
           :is-current-user="authStore.user?.id === score.user.id"
         />
       </div>
@@ -66,7 +62,7 @@ const authStore = useAuthStore()
 
 .table-header {
   display: grid;
-  grid-template-columns: auto auto 1fr auto auto auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -95,18 +91,8 @@ const authStore = useAuthStore()
   width: 32px;
 }
 
-.header-points,
-.header-streak,
-.header-trend {
+.header-points {
   text-align: center;
-}
-
-.header-streak {
-  min-width: var(--space-12);
-}
-
-.header-trend {
-  min-width: var(--space-8);
 }
 
 .scores-list {
@@ -116,13 +102,7 @@ const authStore = useAuthStore()
 
 @media (max-width: 768px) {
   .table-header {
-    grid-template-columns: auto auto 1fr auto;
     gap: var(--space-3);
-  }
-
-  .header-streak,
-  .header-trend {
-    display: none;
   }
 }
 </style>

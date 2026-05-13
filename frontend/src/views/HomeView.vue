@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { matchService } from '../services/match.service.js'
 import MatchCard from '../components/common/MatchCard.vue'
-import BaseButton from '../components/base/BaseButton.vue'
 import AdSlot from '../components/base/AdSlot.vue'
 
 const matches = ref([])
@@ -79,9 +78,6 @@ const statsToday = computed(() => {
             {{ statsToday.live }} live · {{ statsToday.upcoming }} in the next 24h · {{ statsToday.predicted }}/{{ statsToday.total }} predicted
           </p>
         </div>
-        <BaseButton @click="$router.push('/leaderboards')">
-          Predict next match →
-        </BaseButton>
       </header>
 
       <div v-if="isLoading" class="loading-state">
@@ -176,14 +172,6 @@ const statsToday = computed(() => {
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-6);
-}
-
-.header-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -311,11 +299,6 @@ const statsToday = computed(() => {
 @media (max-width: 768px) {
   .home-view {
     padding: var(--space-6) var(--space-4);
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .page-title {
