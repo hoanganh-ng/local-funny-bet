@@ -3,6 +3,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/auth.store.js'
 import { useLeaderboardStore } from '../../store/leaderboard.store.js'
 import { useTheme } from '../../composables/useTheme.js'
+import BaseButton from '../base/BaseButton.vue'
+import { ref } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +18,23 @@ function isActive(path) {
 
 function goToBoard(id) {
   router.push(`/leaderboards/${id}`)
+}
+
+const isLoggingOut = ref(false)
+
+async function handleLogout() {
+  if (isLoggingOut.value) return
+
+  isLoggingOut.value = true
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (err) {
+    console.error('Logout failed:', err)
+    router.push('/login')  // Fail-safe: always redirect
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 
@@ -100,6 +119,16 @@ function goToBoard(id) {
           <span v-else>🌙</span>
         </button>
       </div>
+
+      <BaseButton
+        variant="ghost"
+        size="sm"
+        :loading="isLoggingOut"
+        @click="handleLogout"
+        class="logout-btn"
+      >
+        Log out
+      </BaseButton>
     </div>
   </aside>
 </template>
@@ -454,5 +483,17 @@ function goToBoard(id) {
 
 .profile-menu:hover {
   background: var(--color-bg-elevated);
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: var(--space-2);
+  justify-content: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-2);
+}
+
+.logout-btn:hover {
+  color: var(--color-text-primary);
 }
 </style>
