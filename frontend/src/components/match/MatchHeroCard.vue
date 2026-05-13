@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import MatchStatusBadge from './MatchStatusBadge.vue'
-import TeamForm from './TeamForm.vue'
 
 const props = defineProps({
   match: {
@@ -43,7 +42,6 @@ const kickoffDisplay = computed(() => {
           <span class="team-flag">{{ match.homeTeam.slice(0, 3).toUpperCase() }}</span>
         </div>
         <h2 class="team-name">{{ match.homeTeam }}</h2>
-        <TeamForm v-if="match.homeForm" :form="match.homeForm" />
         <div v-if="showScore" class="team-score">{{ match.homeScore ?? '-' }}</div>
       </div>
 
@@ -58,14 +56,8 @@ const kickoffDisplay = computed(() => {
           <span class="team-flag">{{ match.awayTeam.slice(0, 3).toUpperCase() }}</span>
         </div>
         <h2 class="team-name">{{ match.awayTeam }}</h2>
-        <TeamForm v-if="match.awayForm" :form="match.awayForm" />
         <div v-if="showScore" class="team-score">{{ match.awayScore ?? '-' }}</div>
       </div>
-    </div>
-
-    <div v-if="match.venue" class="hero-footer">
-      <span class="venue-icon">📍</span>
-      <span class="venue-text">{{ match.venue }}</span>
     </div>
   </div>
 </template>

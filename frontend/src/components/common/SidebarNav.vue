@@ -53,7 +53,7 @@ async function handleLogout() {
       </div>
 
       <div class="tournament-info">
-        <!-- <p class="tournament-stage">Group Stage · Matchday 2</p> --> No Data Yet
+        <!-- <p class="tournament-stage">Group Stage · Matchday 2</p> No Data Yet -->
         <p class="tournament-name">{{ tournament?.name || 'Continental Cup 2026' }}</p>
       </div>
     </div>
@@ -483,5 +483,12 @@ async function handleLogout() {
 
 .logout-btn:hover {
   color: var(--color-text-primary);
+}
+
+/* Mobile: hide sidebar, use bottom tab bar instead */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
 }
 </style>

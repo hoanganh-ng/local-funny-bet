@@ -76,23 +76,19 @@ async function handlePredictionChange(newPrediction) {
 
 <template>
   <div class="match-card">
-    <!-- Header with badge and group info -->
+    <!-- Header with badge and time -->
     <div class="match-header">
       <div class="match-meta">
-        <span class="match-group">{{ match.group || 'Group A' }}</span>
-        <span class="match-dot">·</span>
-        <span class="match-time">{{ new Date(match.kickoffAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) }}</span>
+        <span class="match-time">{{ new Date(match.kickoffAt).toLocaleString('vi-VN') }}</span>
       </div>
       <BaseBadge :status="match.status" />
     </div>
 
     <!-- Teams and score -->
     <div class="match-teams">
-      <div class="team">
-        <div class="team-info">
-          <div class="team-flag">{{ match.homeTeamCode || 'POR' }}</div>
-          <span class="team-name">{{ match.homeTeam }}</span>
-        </div>
+      <div class="team home-team">
+        <div class="team-flag">{{ match.homeTeam.slice(0, 3).toUpperCase() }}</div>
+        <span class="team-name">{{ match.homeTeam }}</span>
         <span v-if="showScore" class="score">{{ match.homeScore ?? '-' }}</span>
       </div>
 
@@ -101,11 +97,9 @@ async function handlePredictionChange(newPrediction) {
         <span v-else class="score-sep">-</span>
       </div>
 
-      <div class="team">
-        <div class="team-info">
-          <div class="team-flag">{{ match.awayTeamCode || 'JPN' }}</div>
-          <span class="team-name">{{ match.awayTeam }}</span>
-        </div>
+      <div class="team away-team">
+        <div class="team-flag">{{ match.awayTeam.slice(0, 3).toUpperCase() }}</div>
+        <span class="team-name">{{ match.awayTeam }}</span>
         <span v-if="showScore" class="score">{{ match.awayScore ?? '-' }}</span>
       </div>
     </div>
@@ -114,8 +108,6 @@ async function handlePredictionChange(newPrediction) {
     <OutcomePicker
       v-model="prediction"
       :locked="isLocked"
-      :result="match.result"
-      :points="match.points"
       @update:model-value="handlePredictionChange"
     />
 
@@ -189,16 +181,17 @@ async function handlePredictionChange(newPrediction) {
 
 .team {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: center;
+  gap: var(--space-3);
 }
 
-.team-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: 1;
+.home-team {
+  flex-direction: row;
+}
+
+.away-team {
+  flex-direction: row;
 }
 
 .team-flag {
@@ -213,6 +206,7 @@ async function handlePredictionChange(newPrediction) {
   border: var(--border-hairline);
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .team-flag {
