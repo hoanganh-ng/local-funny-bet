@@ -194,6 +194,10 @@ func (m *mockLeaderboardService) GetLeaderboard(ctx context.Context, id string) 
 	return nil, nil
 }
 
+func (m *mockLeaderboardService) GetScores(ctx context.Context, id string) ([]*leaderboard.Score, error) {
+	return nil, nil
+}
+
 func (m *mockLeaderboardService) ListMyLeaderboards(ctx context.Context, userID string) ([]*leaderboard.Leaderboard, error) {
 	return nil, nil
 }
