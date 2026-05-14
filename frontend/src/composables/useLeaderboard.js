@@ -14,7 +14,7 @@ export function useLeaderboard(leaderboardId) {
     error.value = null
 
     try {
-      const data = await leaderboardService.getOne(leaderboardId.value || leaderboardId)
+      const data = await leaderboardService.getScores(leaderboardId.value || leaderboardId)
       scores.value = data.scores || []
     } catch (err) {
       error.value = err.message || 'Failed to fetch scores'

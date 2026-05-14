@@ -50,6 +50,14 @@ func (s *Service) CreateLeaderboard(ctx context.Context, userID, name string) (*
 	return lb, nil
 }
 
+func (s *Service) GetScores(ctx context.Context, id string) ([]*leaderboard.Score, error) {
+	scores, err := s.leaderboardRepo.GetScores(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("getting scores: %w", err)
+	}
+	return scores, nil
+}
+
 func (s *Service) GetLeaderboard(ctx context.Context, id string) (*leaderboard.Leaderboard, error) {
 	lb, err := s.leaderboardRepo.GetByID(ctx, id)
 	if err != nil {

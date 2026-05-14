@@ -1,23 +1,47 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLeaderboardStore } from '../store/leaderboard.store.js'
+import { useAuthStore } from '../store/auth.store.js'
 import BaseButton from '../components/base/BaseButton.vue'
 
 const router = useRouter()
 const leaderboardStore = useLeaderboardStore()
+const authStore = useAuthStore()
 const isLoading = ref(false)
 
 onMounted(async () => {
   isLoading.value = true
   try {
     await leaderboardStore.fetchAll()
+    await Promise.all(
+      leaderboardStore.leaderboards.map(b => leaderboardStore.fetchBoardScores(b.id))
+    )
   } catch (error) {
     console.error('Failed to load leaderboards:', error)
   } finally {
     isLoading.value = false
   }
 })
+
+function summary(boardId) {
+  return leaderboardStore.boardSummary(boardId, authStore.user?.id)
+}
+
+const bestRank = computed(() => {
+  let best = null
+  for (const board of leaderboardStore.leaderboards) {
+    const s = summary(board.id)
+    if (s.userRank != null && (best === null || s.userRank < best)) {
+      best = s.userRank
+    }
+  }
+  return best
+})
+
+const totalMembers = computed(() =>
+  leaderboardStore.leaderboards.reduce((sum, b) => sum + (summary(b.id).memberCount || 0), 0)
+)
 
 function goToBoard(id) {
   router.push(`/leaderboards/${id}`)
@@ -36,7 +60,7 @@ function createBoard() {
           <p class="header-label">Where You Stand</p>
           <h1 class="page-title">Leaderboards</h1>
           <p class="page-subtitle">
-            In {{ leaderboardStore.leaderboards.length }} boards, {{ leaderboardStore.totalMembers || 34 }} people · best rank #{{ leaderboardStore.bestRank || 1 }} (Founders)
+            In {{ leaderboardStore.leaderboards.length }} {{ leaderboardStore.leaderboards.length === 1 ? 'board' : 'boards' }}, {{ totalMembers }} {{ totalMembers === 1 ? 'person' : 'people' }}{{ bestRank != null ? ` · best rank #${bestRank}` : '' }}
           </p>
         </div>
         <BaseButton @click="createBoard">
@@ -67,39 +91,45 @@ function createBoard() {
           @click="goToBoard(board.id)"
         >
           <div class="board-header">
-            <div class="board-rank-chip" :class="{ highlight: board.userRank === 1 }">
+            <div class="board-rank-chip" :class="{ highlight: summary(board.id).userRank === 1 }">
               Rank<br>
-              #{{ board.userRank || 3 }}
+              {{ summary(board.id).userRank != null ? `#${summary(board.id).userRank}` : '—' }}
             </div>
             <div class="board-members">
               <div
-                v-for="(member, idx) in (board.topMembers || []).slice(0, 3)"
+                v-for="(member, idx) in summary(board.id).topMembers"
                 :key="idx"
                 class="member-avatar"
-                :style="{ backgroundColor: member.color || `hsl(${idx * 120}, 60%, 50%)` }"
+                :style="{ backgroundColor: `hsl(${idx * 120}, 60%, 50%)` }"
               >
-                {{ member.initials || member.name?.charAt(0) || 'A' }}
+                {{ member.name?.charAt(0) || '?' }}
               </div>
-              <span v-if="board.memberCount > 3" class="member-count">
-                +{{ board.memberCount - 3 }}
+              <span v-if="summary(board.id).memberCount > 3" class="member-count">
+                +{{ summary(board.id).memberCount - 3 }}
               </span>
             </div>
           </div>
 
           <div class="board-body">
             <h3 class="board-name">{{ board.name }}</h3>
-            <p class="board-meta">{{ board.memberCount }} members</p>
+            <p class="board-meta">{{ summary(board.id).memberCount }} {{ summary(board.id).memberCount === 1 ? 'member' : 'members' }}</p>
           </div>
 
           <div class="board-footer">
             <div class="board-stat">
               <span class="stat-label">Lead</span>
-              <span class="stat-value">{{ board.leader || 'Priya' }}</span>
+              <span class="stat-value">{{ summary(board.id).leaderName ?? '—' }}</span>
             </div>
             <div class="board-stat">
-              <span class="stat-label">{{ board.userPoints || 8 }} pts</span>
-              <span class="stat-value" :class="{ positive: board.pointsFromLead > 0, negative: board.pointsFromLead < 0 }">
-                {{ board.pointsFromLead > 0 ? '+' : '' }}{{ board.pointsFromLead || 0 }}
+              <span class="stat-label">{{ summary(board.id).userPoints ?? 0 }} pts</span>
+              <span
+                class="stat-value"
+                :class="{
+                  positive: (summary(board.id).pointsFromLead ?? 0) > 0,
+                  negative: (summary(board.id).pointsFromLead ?? 0) < 0
+                }"
+              >
+                {{ (summary(board.id).pointsFromLead ?? 0) > 0 ? '+' : '' }}{{ summary(board.id).pointsFromLead ?? 0 }}
               </span>
             </div>
           </div>

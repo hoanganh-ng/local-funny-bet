@@ -99,6 +99,7 @@ func main() {
 	mux.Handle("GET /leaderboards/{lbID}/matches/{matchID}/predictions", authMiddleware(http.HandlerFunc(predictionHandler.ListPredictions)))
 	mux.Handle("POST /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.CreateLeaderboard)))
 	mux.Handle("GET /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.ListLeaderboards)))
+	mux.Handle("GET /leaderboards/{id}/scores", authMiddleware(http.HandlerFunc(leaderboardHandler.GetScores)))
 	mux.Handle("POST /leaderboards/{id}/invite", authMiddleware(http.HandlerFunc(leaderboardHandler.GenerateInvite)))
 	mux.Handle("POST /leaderboards/join", authMiddleware(http.HandlerFunc(leaderboardHandler.JoinLeaderboard)))
 

@@ -29,6 +29,10 @@ export const leaderboardService = {
     })
   },
 
+  async getScores(id) {
+    return request(`/leaderboards/${id}/scores`)
+  },
+
   async getMatchPredictions(leaderboardId, matchId) {
     return request(`/leaderboards/${leaderboardId}/matches/${matchId}/predictions`)
   }

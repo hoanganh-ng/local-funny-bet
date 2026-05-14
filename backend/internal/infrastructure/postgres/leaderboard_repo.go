@@ -154,21 +154,21 @@ func (r *LeaderboardRepo) GetMember(ctx context.Context, leaderboardID, userID s
 }
 
 func (r *LeaderboardRepo) GetScores(ctx context.Context, leaderboardID string) ([]*leaderboard.Score, error) {
+	// LEFT JOIN so members with 0 correct predictions still appear in the standings.
 	query := `
-		SELECT u.id, u.name, COUNT(*) AS points
-		FROM predictions p
-		JOIN matches m ON p.match_id = m.id
-		JOIN leaderboard_members lm
-		  ON lm.user_id = p.user_id AND lm.leaderboard_id = $1
-		JOIN users u ON u.id = p.user_id
-		WHERE m.status = 'finished'
-		  AND (
-		    (m.home_score > m.away_score AND p.value = 'home') OR
-		    (m.home_score = m.away_score AND p.value = 'draw') OR
-		    (m.home_score < m.away_score AND p.value = 'away')
-		  )
+		SELECT u.id, u.name, COUNT(CASE WHEN
+		    m.status = 'finished' AND (
+		        (m.home_score > m.away_score AND p.value = 'home') OR
+		        (m.home_score = m.away_score AND p.value = 'draw') OR
+		        (m.home_score < m.away_score AND p.value = 'away')
+		    ) THEN 1 END) AS points
+		FROM leaderboard_members lm
+		JOIN users u ON u.id = lm.user_id
+		LEFT JOIN predictions p ON p.user_id = lm.user_id
+		LEFT JOIN matches m ON m.id = p.match_id
+		WHERE lm.leaderboard_id = $1
 		GROUP BY u.id, u.name
-		ORDER BY points DESC
+		ORDER BY points DESC, u.name ASC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, leaderboardID)

@@ -17,6 +17,7 @@ import (
 type LeaderboardService interface {
 	CreateLeaderboard(ctx context.Context, userID, name string) (*leaderboard.Leaderboard, error)
 	GetLeaderboard(ctx context.Context, id string) (*leaderboard.Leaderboard, error)
+	GetScores(ctx context.Context, id string) ([]*leaderboard.Score, error)
 	ListMyLeaderboards(ctx context.Context, userID string) ([]*leaderboard.Leaderboard, error)
 	GenerateInvite(ctx context.Context, leaderboardID, userID string) (token string, expiresAt time.Time, err error)
 	JoinLeaderboard(ctx context.Context, userID, inviteToken string) (string, error)
@@ -94,6 +95,33 @@ func (h *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Reque
 	}
 
 	respondJSON(w, http.StatusOK, lb)
+}
+
+func (h *LeaderboardHandler) GetScores(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		respondError(w, http.StatusBadRequest, "leaderboard ID is required")
+		return
+	}
+
+	scores, err := h.service.GetScores(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "leaderboard not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if scores == nil {
+		scores = []*leaderboard.Score{}
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"scores":       scores,
+		"member_count": len(scores),
+	})
 }
 
 func (h *LeaderboardHandler) GenerateInvite(w http.ResponseWriter, r *http.Request) {
