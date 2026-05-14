@@ -85,10 +85,10 @@ func (s *Service) GenerateInvite(ctx context.Context, leaderboardID, userID stri
 	return token, expiresAt, nil
 }
 
-func (s *Service) JoinLeaderboard(ctx context.Context, userID, inviteToken string) error {
+func (s *Service) JoinLeaderboard(ctx context.Context, userID, inviteToken string) (string, error) {
 	leaderboardID, err := auth.VerifyInviteToken(inviteToken, s.inviteSecret)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	m := &leaderboard.Member{
@@ -100,8 +100,8 @@ func (s *Service) JoinLeaderboard(ctx context.Context, userID, inviteToken strin
 	}
 
 	if err := s.leaderboardRepo.AddMember(ctx, m); err != nil {
-		return fmt.Errorf("adding member: %w", err)
+		return leaderboardID, fmt.Errorf("adding member: %w", err)
 	}
 
-	return nil
+	return leaderboardID, nil
 }

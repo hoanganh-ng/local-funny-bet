@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lib/pq"
 	"wc2026/internal/domain"
 	"wc2026/internal/domain/leaderboard"
 )
@@ -116,6 +117,10 @@ func (r *LeaderboardRepo) AddMember(ctx context.Context, m *leaderboard.Member) 
 	)
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return domain.ErrAlreadyExists
+		}
 		return fmt.Errorf("adding member to leaderboard: %w", err)
 	}
 

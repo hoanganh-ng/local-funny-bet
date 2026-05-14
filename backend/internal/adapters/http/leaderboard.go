@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"wc2026/internal/domain"
@@ -18,7 +19,7 @@ type LeaderboardService interface {
 	GetLeaderboard(ctx context.Context, id string) (*leaderboard.Leaderboard, error)
 	ListMyLeaderboards(ctx context.Context, userID string) ([]*leaderboard.Leaderboard, error)
 	GenerateInvite(ctx context.Context, leaderboardID, userID string) (token string, expiresAt time.Time, err error)
-	JoinLeaderboard(ctx context.Context, userID, inviteToken string) error
+	JoinLeaderboard(ctx context.Context, userID, inviteToken string) (string, error)
 }
 
 type LeaderboardHandler struct {
@@ -145,7 +146,7 @@ func (h *LeaderboardHandler) JoinLeaderboard(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := h.service.JoinLeaderboard(r.Context(), userID, req.InviteToken)
+	leaderboardID, err := h.service.JoinLeaderboard(r.Context(), userID, req.InviteToken)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrExpired):
@@ -153,12 +154,22 @@ func (h *LeaderboardHandler) JoinLeaderboard(w http.ResponseWriter, r *http.Requ
 		case errors.Is(err, auth.ErrInvalid):
 			respondError(w, http.StatusBadRequest, "invite token invalid")
 		case errors.Is(err, domain.ErrAlreadyExists):
-			respondError(w, http.StatusConflict, "already a member")
+			// leaderboardID is set even on ErrAlreadyExists; fall back to token parse if not
+			if leaderboardID == "" {
+				parts := strings.Split(req.InviteToken, ".")
+				if len(parts) >= 1 {
+					leaderboardID = parts[0]
+				}
+			}
+			respondJSON(w, http.StatusConflict, map[string]string{
+				"error":          "already a member",
+				"leaderboard_id": leaderboardID,
+			})
 		default:
 			respondError(w, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "joined leaderboard"})
+	respondJSON(w, http.StatusOK, map[string]string{"leaderboard_id": leaderboardID})
 }

@@ -147,9 +147,9 @@ func TestJWTMiddleware(t *testing.T) {
 func TestJoinLeaderboard_RejectsQueryStringToken(t *testing.T) {
 	// Mock service
 	svc := &mockLeaderboardService{
-		joinFunc: func(ctx context.Context, userID, inviteToken string) error {
+		joinFunc: func(ctx context.Context, userID, inviteToken string) (string, error) {
 			t.Fatal("JoinLeaderboard should not be called when token is in query string")
-			return nil
+			return "", nil
 		},
 	}
 
@@ -183,7 +183,7 @@ func TestJoinLeaderboard_RejectsQueryStringToken(t *testing.T) {
 
 // mockLeaderboardService for testing
 type mockLeaderboardService struct {
-	joinFunc func(ctx context.Context, userID, inviteToken string) error
+	joinFunc func(ctx context.Context, userID, inviteToken string) (string, error)
 }
 
 func (m *mockLeaderboardService) CreateLeaderboard(ctx context.Context, userID, name string) (*leaderboard.Leaderboard, error) {
@@ -202,6 +202,6 @@ func (m *mockLeaderboardService) GenerateInvite(ctx context.Context, leaderboard
 	return "", time.Time{}, nil
 }
 
-func (m *mockLeaderboardService) JoinLeaderboard(ctx context.Context, userID, inviteToken string) error {
+func (m *mockLeaderboardService) JoinLeaderboard(ctx context.Context, userID, inviteToken string) (string, error) {
 	return m.joinFunc(ctx, userID, inviteToken)
 }

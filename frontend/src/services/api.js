@@ -55,11 +55,15 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     let errorMessage = 'Request failed'
+    let errorData = null
     try {
-      const errorData = await response.json()
+      errorData = await response.json()
       errorMessage = errorData.error || errorMessage
     } catch {}
-    throw new Error(errorMessage)
+    const err = new Error(errorMessage)
+    err.status = response.status
+    err.data = errorData
+    throw err
   }
 
   return response.json()
