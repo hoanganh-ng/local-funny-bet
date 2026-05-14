@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"wc2026/internal/domain/leaderboard"
 	"wc2026/internal/domain/match"
@@ -36,8 +37,8 @@ func NewService(repo match.Repository, client FootballClient, tournaments tourna
 	}
 }
 
-func (s *Service) ListMatches(ctx context.Context, status string) ([]*match.Match, error) {
-	matches, err := s.repo.List(ctx, status)
+func (s *Service) ListMatches(ctx context.Context, status string, limit int, after time.Time) ([]*match.Match, error) {
+	matches, err := s.repo.List(ctx, status, limit, after)
 	if err != nil {
 		return nil, fmt.Errorf("listing matches: %w", err)
 	}

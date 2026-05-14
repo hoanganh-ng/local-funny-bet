@@ -16,7 +16,7 @@ export const leaderboardService = {
     return request(`/leaderboards/${id}`)
   },
 
-  async generateInvite(id) {
+  async generateInviteLink(id) {
     return request(`/leaderboards/${id}/invite`, {
       method: 'POST'
     })

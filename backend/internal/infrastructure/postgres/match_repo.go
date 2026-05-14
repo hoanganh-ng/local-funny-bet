@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"wc2026/internal/domain"
 	"wc2026/internal/domain/match"
@@ -66,20 +68,32 @@ func (r *MatchRepo) GetByID(ctx context.Context, id string) (*match.Match, error
 	return &m, nil
 }
 
-func (r *MatchRepo) List(ctx context.Context, status string) ([]*match.Match, error) {
-	query := `
+func (r *MatchRepo) List(ctx context.Context, status string, limit int, after time.Time) ([]*match.Match, error) {
+	base := `
 		SELECT id, tournament_id, home_team, away_team, home_team_code, away_team_code,
 		       home_score, away_score, kickoff_at, status, external_id
 		FROM matches
 	`
 
-	args := []interface{}{}
+	var conditions []string
+	var args []interface{}
+
 	if status != "" {
-		query += " WHERE status = $1"
 		args = append(args, status)
+		conditions = append(conditions, fmt.Sprintf("status = $%d", len(args)))
+	}
+	if !after.IsZero() {
+		args = append(args, after)
+		conditions = append(conditions, fmt.Sprintf("kickoff_at > $%d", len(args)))
 	}
 
-	query += " ORDER BY kickoff_at ASC"
+	query := base
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	args = append(args, limit)
+	query += fmt.Sprintf(" ORDER BY kickoff_at ASC LIMIT $%d", len(args))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {

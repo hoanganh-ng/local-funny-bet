@@ -2,30 +2,30 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLeaderboard } from '../composables/useLeaderboard.js'
-import { matchService } from '../services/match.service.js'
-import { predictionService } from '../services/prediction.service.js'
 import { leaderboardService } from '../services/leaderboard.service.js'
+import { useAuthStore } from '../store/auth.store.js'
+import { useLeaderboardStore } from '../store/leaderboard.store.js'
 import LeaderboardHeader from '../components/leaderboard/LeaderboardHeader.vue'
 import LeaderboardPodium from '../components/leaderboard/LeaderboardPodium.vue'
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable.vue'
-import PredictionForm from '../components/prediction/PredictionForm.vue'
+import MatchList from '../components/match/MatchList.vue'
 import AdSlot from '../components/base/AdSlot.vue'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const leaderboardStore = useLeaderboardStore()
 const leaderboardId = computed(() => route.params.id)
 
 const { scores, isLoading: isLoadingScores } = useLeaderboard(leaderboardId)
 
 const leaderboard = ref(null)
-const matches = ref([])
-const predictions = ref({})
+const isOwner = computed(() => !!authStore.user && authStore.user.id === leaderboard.value?.created_by)
 const isLoadingLeaderboard = ref(false)
-const isLoadingMatches = ref(false)
 
 onMounted(async () => {
   await Promise.all([
     loadLeaderboard(),
-    loadMatches()
+    leaderboardStore.loadMatches()
   ])
 })
 
@@ -40,46 +40,10 @@ async function loadLeaderboard() {
   }
 }
 
-async function loadMatches() {
-  isLoadingMatches.value = true
-  try {
-    matches.value = await matchService.list()
-
-    const predictionPromises = matches.value.map(async (match) => {
-      try {
-        const preds = await leaderboardService.getMatchPredictions(
-          leaderboardId.value,
-          match.id
-        )
-        predictions.value[match.id] = preds
-      } catch (err) {
-        predictions.value[match.id] = []
-      }
-    })
-
-    await Promise.all(predictionPromises)
-  } catch (err) {
-    console.error('Failed to load matches:', err)
-  } finally {
-    isLoadingMatches.value = false
-  }
-}
-
-function getCurrentPrediction(matchId) {
-  const matchPredictions = predictions.value[matchId] || []
-  return matchPredictions.find(p => p.is_current_user) || null
-}
-
-async function onPredictionSuccess(matchId) {
-  try {
-    const preds = await leaderboardService.getMatchPredictions(
-      leaderboardId.value,
-      matchId
-    )
-    predictions.value[matchId] = preds
-  } catch (err) {
-    console.error('Failed to reload predictions:', err)
-  }
+async function handleGetInviteLink() {
+  const response = await leaderboardService.generateInviteLink(leaderboardId.value)
+  const url = `${window.location.origin}/join?token=${response.token}`
+  await navigator.clipboard.writeText(url)
 }
 </script>
 
@@ -90,7 +54,11 @@ async function onPredictionSuccess(matchId) {
         Loading leaderboard...
       </div>
       <template v-else-if="leaderboard">
-        <LeaderboardHeader :leaderboard="leaderboard" />
+        <LeaderboardHeader
+          :leaderboard="leaderboard"
+          :is-owner="isOwner"
+          :on-get-invite-link="handleGetInviteLink"
+        />
 
         <section class="scores-section">
           <h2 class="section-title">Rankings</h2>
@@ -109,19 +77,13 @@ async function onPredictionSuccess(matchId) {
         <AdSlot position="between-matches" />
 
         <section class="matches-section">
-          <h2 class="section-title">Matches & Predictions</h2>
-          <div v-if="isLoadingMatches" class="loading-state">
-            Loading matches...
-          </div>
-          <div v-else class="matches-list">
-            <PredictionForm
-              v-for="match in matches"
-              :key="match.id"
-              :match="match"
-              :current-prediction="getCurrentPrediction(match.id)"
-              @success="onPredictionSuccess(match.id)"
-            />
-          </div>
+          <h2 class="section-title">Matches</h2>
+          <MatchList
+            :matches="leaderboardStore.matches"
+            :has-more="leaderboardStore.hasMore"
+            :loading-more="leaderboardStore.loadingMore"
+            @load-more="leaderboardStore.loadMoreMatches()"
+          />
         </section>
       </template>
       <div v-else class="error-state">
@@ -186,12 +148,6 @@ async function onPredictionSuccess(matchId) {
   text-align: center;
   color: var(--color-danger);
   font-size: var(--text-base);
-}
-
-.matches-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
 </style>

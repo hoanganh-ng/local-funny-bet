@@ -1,12 +1,37 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import MatchCard from '../common/MatchCard.vue'
+import BaseSpinner from '../base/BaseSpinner.vue'
 
 const props = defineProps({
-  matches: {
-    type: Array,
-    default: () => []
-  }
+  matches:     { type: Array,   required: true },
+  hasMore:     { type: Boolean, default: false },
+  loadingMore: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['load-more'])
+
+const sentinel = ref(null)
+let observer = null
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && props.hasMore && !props.loadingMore) {
+        emit('load-more')
+      }
+    },
+    { threshold: 0.1 }
+  )
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
+})
+
+watch(() => props.hasMore, (newVal) => {
+  if (newVal && sentinel.value) observer?.observe(sentinel.value)
 })
 
 // Filter out finished matches
@@ -134,6 +159,16 @@ const hasAny = computed(() =>
         </div>
       </section>
     </template>
+
+    <div ref="sentinel" class="scroll-sentinel" />
+
+    <div v-if="loadingMore" class="loading-row">
+      <BaseSpinner size="md" />
+    </div>
+
+    <div v-if="!hasMore && matches.length > 0" class="end-of-list">
+      All matches loaded
+    </div>
   </div>
 </template>
 
@@ -188,5 +223,27 @@ const hasAny = computed(() =>
 @keyframes live-border-pulse {
   0%, 100% { border-left-color: var(--color-status-live); }
   50%       { border-left-color: var(--color-status-live-dim); }
+}
+
+/* ── Scroll sentinel ── */
+.scroll-sentinel {
+  height: 1px;
+}
+
+/* ── Loading row ── */
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) 0;
+  min-height: var(--space-16);
+}
+
+/* ── End of list ── */
+.end-of-list {
+  text-align: center;
+  padding: var(--space-6) 0;
+  color: var(--color-text-disabled);
+  font-size: var(--text-sm);
 }
 </style>

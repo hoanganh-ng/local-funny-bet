@@ -17,10 +17,18 @@ function transformMatch(match) {
 }
 
 export const matchService = {
-  async list(status) {
-    const query = status ? `?status=${status}` : ''
-    const matches = await request(`/matches${query}`)
-    return matches.map(transformMatch)
+  async list({ status = '', limit = 20, after = null } = {}) {
+    const params = new URLSearchParams()
+    if (status) params.set('status', status)
+    params.set('limit', String(limit))
+    if (after) params.set('after', after)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    const data = await request(`/matches${query}`)
+    return {
+      matches: data.matches.map(transformMatch),
+      nextCursor: data.next_cursor || null,
+      hasMore: data.has_more || false,
+    }
   },
 
   async getOne(id) {
