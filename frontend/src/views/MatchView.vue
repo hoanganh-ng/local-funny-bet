@@ -24,7 +24,7 @@ const kickoffPassed = computed(() => {
 })
 
 const currentPrediction = computed(() => {
-  return predictions.value.find(p => p.isCurrentUser) || null
+  return predictions.value.find(p => p.is_current_user) || null
 })
 
 onMounted(async () => {

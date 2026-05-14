@@ -96,6 +96,7 @@ func main() {
 	authMiddleware := middleware.RequireAuth(tokenVerifier)
 	mux.Handle("GET /auth/me", authMiddleware(http.HandlerFunc(authHandler.GetCurrentUser)))
 	mux.Handle("PUT /predictions", authMiddleware(http.HandlerFunc(predictionHandler.UpsertPrediction)))
+	mux.Handle("GET /predictions/history", authMiddleware(http.HandlerFunc(predictionHandler.GetHistory)))
 	mux.Handle("GET /leaderboards/{lbID}/matches/{matchID}/predictions", authMiddleware(http.HandlerFunc(predictionHandler.ListPredictions)))
 	mux.Handle("POST /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.CreateLeaderboard)))
 	mux.Handle("GET /leaderboards", authMiddleware(http.HandlerFunc(leaderboardHandler.ListLeaderboards)))

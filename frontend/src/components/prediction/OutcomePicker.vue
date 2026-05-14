@@ -3,7 +3,7 @@ const props = defineProps({
   modelValue: {
     type: String,
     default: null,
-    validator: (val) => val === null || ['home', 'draw', 'away'].includes(val)
+    validator: (val) => val === null || ['home_win', 'draw', 'away_win'].includes(val)
   },
   locked: {
     type: Boolean,
@@ -12,7 +12,7 @@ const props = defineProps({
   result: {
     type: String,
     default: null,
-    validator: (val) => val === null || ['home', 'draw', 'away'].includes(val)
+    validator: (val) => val === null || ['home_win', 'draw', 'away_win'].includes(val)
   },
   points: {
     type: Number,
@@ -30,7 +30,6 @@ const selectOutcome = (outcome) => {
 const getOutcomeState = (outcome) => {
   if (!props.result) return null
   if (!props.modelValue) return null
-
   if (props.modelValue === outcome) {
     return props.result === outcome ? 'correct' : 'wrong'
   }
@@ -42,26 +41,26 @@ const getOutcomeState = (outcome) => {
   <div class="outcome-picker">
     <button
       type="button"
-      class="outcome-btn"
+      class="outcome-btn outcome-btn--home"
       :class="{
-        selected: modelValue === 'home',
+        selected: modelValue === 'home_win',
         locked: locked,
-        correct: getOutcomeState('home') === 'correct',
-        wrong: getOutcomeState('home') === 'wrong'
+        correct: getOutcomeState('home_win') === 'correct',
+        wrong: getOutcomeState('home_win') === 'wrong'
       }"
       :disabled="locked"
-      @click="selectOutcome('home')"
+      @click="selectOutcome('home_win')"
     >
       <span class="outcome-label">1</span>
       <span class="outcome-sublabel">HOME</span>
-      <span v-if="getOutcomeState('home') === 'correct'" class="outcome-points">
+      <span v-if="getOutcomeState('home_win') === 'correct'" class="outcome-points">
         +{{ points }}
       </span>
     </button>
 
     <button
       type="button"
-      class="outcome-btn"
+      class="outcome-btn outcome-btn--draw"
       :class="{
         selected: modelValue === 'draw',
         locked: locked,
@@ -80,19 +79,19 @@ const getOutcomeState = (outcome) => {
 
     <button
       type="button"
-      class="outcome-btn"
+      class="outcome-btn outcome-btn--away"
       :class="{
-        selected: modelValue === 'away',
+        selected: modelValue === 'away_win',
         locked: locked,
-        correct: getOutcomeState('away') === 'correct',
-        wrong: getOutcomeState('away') === 'wrong'
+        correct: getOutcomeState('away_win') === 'correct',
+        wrong: getOutcomeState('away_win') === 'wrong'
       }"
       :disabled="locked"
-      @click="selectOutcome('away')"
+      @click="selectOutcome('away_win')"
     >
       <span class="outcome-label">2</span>
       <span class="outcome-sublabel">AWAY</span>
-      <span v-if="getOutcomeState('away') === 'correct'" class="outcome-points">
+      <span v-if="getOutcomeState('away_win') === 'correct'" class="outcome-points">
         +{{ points }}
       </span>
     </button>
@@ -117,7 +116,10 @@ const getOutcomeState = (outcome) => {
   background: var(--color-surface);
   border: var(--border-hairline);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-default);
+  transition: background var(--duration-fast) var(--ease-default),
+              border-color var(--duration-fast) var(--ease-default),
+              box-shadow var(--duration-fast) var(--ease-default),
+              transform var(--duration-fast) var(--ease-default);
   position: relative;
 }
 
@@ -133,15 +135,27 @@ const getOutcomeState = (outcome) => {
 }
 
 [data-theme="dark"] .outcome-btn.selected {
-  background: var(--color-pick-bg);
-  border: var(--border-accent);
+  background: var(--color-accent-glow);
+  border-color: var(--color-border-accent);
   box-shadow: var(--shadow-accent);
 }
 
+[data-theme="dark"] .outcome-btn--home:hover:not(.locked):not(.selected) {
+  background: var(--color-home-win);
+}
+
+[data-theme="dark"] .outcome-btn--draw:hover:not(.locked):not(.selected) {
+  background: var(--color-draw);
+}
+
+[data-theme="dark"] .outcome-btn--away:hover:not(.locked):not(.selected) {
+  background: var(--color-away-win);
+}
+
 [data-theme="dark"] .outcome-btn.correct {
-  background: rgba(63,185,80,0.15);
+  background: rgba(63, 185, 80, 0.15);
   border-color: var(--color-correct);
-  box-shadow: 0 0 20px rgba(63,185,80,0.2);
+  box-shadow: 0 0 20px rgba(63, 185, 80, 0.2);
 }
 
 [data-theme="dark"] .outcome-btn.wrong {
@@ -159,7 +173,7 @@ const getOutcomeState = (outcome) => {
 }
 
 [data-theme="light"] .outcome-btn.selected {
-  background: var(--color-pick-bg);
+  background: var(--color-accent-glow);
   color: var(--color-accent-text);
   border: var(--border-medium);
 }

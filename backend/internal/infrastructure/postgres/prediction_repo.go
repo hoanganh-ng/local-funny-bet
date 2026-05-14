@@ -70,10 +70,12 @@ func (r *PredictionRepo) GetByUserAndMatch(ctx context.Context, userID, matchID 
 
 func (r *PredictionRepo) ListByMatch(ctx context.Context, matchID string) ([]*prediction.Prediction, error) {
 	query := `
-		SELECT id, user_id, match_id, value, updated_at
-		FROM predictions
-		WHERE match_id = $1
-		ORDER BY updated_at DESC
+		SELECT p.id, p.user_id, p.match_id, p.value, p.updated_at,
+		       COALESCE(u.name, '') AS user_name, u.avatar_url
+		FROM predictions p
+		LEFT JOIN users u ON u.id = p.user_id
+		WHERE p.match_id = $1
+		ORDER BY p.updated_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, matchID)
@@ -91,6 +93,8 @@ func (r *PredictionRepo) ListByMatch(ctx context.Context, matchID string) ([]*pr
 			&p.MatchID,
 			&p.Value,
 			&p.UpdatedAt,
+			&p.UserName,
+			&p.UserAvatarURL,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scanning prediction: %w", err)
@@ -104,4 +108,51 @@ func (r *PredictionRepo) ListByMatch(ctx context.Context, matchID string) ([]*pr
 	}
 
 	return predictions, nil
+}
+
+func (r *PredictionRepo) ListByUser(ctx context.Context, userID string) ([]*prediction.PredictionWithMatch, error) {
+	query := `
+		SELECT p.id, p.user_id, p.match_id, p.value, p.updated_at,
+		       m.home_team, m.away_team, m.kickoff_at, m.status,
+		       m.home_score, m.away_score
+		FROM predictions p
+		JOIN matches m ON m.id = p.match_id
+		WHERE p.user_id = $1
+		ORDER BY m.kickoff_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("listing predictions for user %s: %w", userID, err)
+	}
+	defer rows.Close()
+
+	var results []*prediction.PredictionWithMatch
+	for rows.Next() {
+		var p prediction.PredictionWithMatch
+		err := rows.Scan(
+			&p.ID,
+			&p.UserID,
+			&p.MatchID,
+			&p.Value,
+			&p.UpdatedAt,
+			&p.HomeTeam,
+			&p.AwayTeam,
+			&p.KickoffAt,
+			&p.Status,
+			&p.HomeScore,
+			&p.AwayScore,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning prediction history: %w", err)
+		}
+
+		results = append(results, &p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating prediction history: %w", err)
+	}
+
+	return results, nil
 }

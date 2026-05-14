@@ -8,6 +8,10 @@ const props = defineProps({
   match: {
     type: Object,
     required: true
+  },
+  showPicker: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -114,22 +118,24 @@ async function handlePredictionChange(newPrediction) {
     </div>
 
     <!-- Prediction picker -->
-    <OutcomePicker
-      v-model="prediction"
-      :locked="isLocked"
-      @update:model-value="handlePredictionChange"
-    />
+    <template v-if="showPicker">
+      <OutcomePicker
+        v-model="prediction"
+        :locked="isLocked"
+        @update:model-value="handlePredictionChange"
+      />
 
-    <!-- Lock countdown -->
-    <div v-if="showCountdown" class="countdown-bar">
-      <span class="countdown-icon">🔒</span>
-      <span class="countdown-text">Locks in {{ formatCountdown }}</span>
-    </div>
+      <!-- Lock countdown -->
+      <div v-if="showCountdown" class="countdown-bar">
+        <span class="countdown-icon">🔒</span>
+        <span class="countdown-text">Locks in {{ formatCountdown }}</span>
+      </div>
 
-    <!-- Locked message -->
-    <div v-else-if="isLocked && !match.result" class="locked-message">
-      Locked at kickoff · result settles soon
-    </div>
+      <!-- Locked message -->
+      <div v-else-if="isLocked && !match.result" class="locked-message">
+        Locked at kickoff · result settles soon
+      </div>
+    </template>
   </div>
 </template>
 

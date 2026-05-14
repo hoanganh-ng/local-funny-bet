@@ -19,6 +19,8 @@ const outcomeLabel = (outcome) => {
 const outcomeClass = (outcome) => {
   return `outcome-${outcome}`
 }
+
+const avatarUrl = (p) => p.user_avatar_url || null
 </script>
 
 <template>
@@ -30,15 +32,15 @@ const outcomeClass = (outcome) => {
     <div v-else class="predictions-list">
       <div
         v-for="prediction in predictions"
-        :key="prediction.userId"
+        :key="prediction.user_id"
         class="prediction-item"
       >
         <BaseAvatar
-          :src="prediction.user.avatarUrl"
-          :name="prediction.user.name"
+          :src="avatarUrl(prediction)"
+          :name="prediction.user_name"
           size="sm"
         />
-        <span class="user-name">{{ prediction.user.name }}</span>
+        <span class="user-name">{{ prediction.user_name }}</span>
         <BaseBadge :class="outcomeClass(prediction.outcome)">
           {{ outcomeLabel(prediction.outcome) }}
         </BaseBadge>

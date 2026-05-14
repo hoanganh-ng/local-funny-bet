@@ -83,3 +83,11 @@ func (s *Service) ListByMatch(ctx context.Context, leaderboardID, matchID, userI
 
 	return predictions, nil
 }
+
+func (s *Service) GetHistory(ctx context.Context, userID string) ([]*prediction.PredictionWithMatch, error) {
+	history, err := s.predictionRepo.ListByUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("getting prediction history: %w", err)
+	}
+	return history, nil
+}

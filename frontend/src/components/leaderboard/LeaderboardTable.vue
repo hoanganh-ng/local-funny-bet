@@ -27,11 +27,11 @@ const authStore = useAuthStore()
       <div class="scores-list">
         <ScoreRow
           v-for="(score, index) in scores"
-          :key="score.user.id"
+          :key="score.user_id"
           :rank="index + 1"
-          :user="score.user"
+          :user="{ id: score.user_id, name: score.name }"
           :points="score.points"
-          :is-current-user="authStore.user?.id === score.user.id"
+          :is-current-user="authStore.user?.id === score.user_id"
         />
       </div>
     </div>
@@ -88,7 +88,7 @@ const authStore = useAuthStore()
 }
 
 .header-avatar {
-  width: 32px;
+  width: var(--space-8);
 }
 
 .header-points {

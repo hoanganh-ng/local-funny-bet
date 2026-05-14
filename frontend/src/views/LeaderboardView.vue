@@ -8,10 +8,8 @@ import { leaderboardService } from '../services/leaderboard.service.js'
 import LeaderboardHeader from '../components/leaderboard/LeaderboardHeader.vue'
 import LeaderboardPodium from '../components/leaderboard/LeaderboardPodium.vue'
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable.vue'
-import MatchCard from '../components/common/MatchCard.vue'
 import PredictionForm from '../components/prediction/PredictionForm.vue'
 import AdSlot from '../components/base/AdSlot.vue'
-import BaseCard from '../components/base/BaseCard.vue'
 
 const route = useRoute()
 const leaderboardId = computed(() => route.params.id)
@@ -69,7 +67,7 @@ async function loadMatches() {
 
 function getCurrentPrediction(matchId) {
   const matchPredictions = predictions.value[matchId] || []
-  return matchPredictions.find(p => p.isCurrentUser) || null
+  return matchPredictions.find(p => p.is_current_user) || null
 }
 
 async function onPredictionSuccess(matchId) {
@@ -116,22 +114,13 @@ async function onPredictionSuccess(matchId) {
             Loading matches...
           </div>
           <div v-else class="matches-list">
-            <BaseCard
+            <PredictionForm
               v-for="match in matches"
               :key="match.id"
-              class="match-prediction-card"
-            >
-              <div class="match-section">
-                <MatchCard :match="match" />
-              </div>
-              <div class="prediction-section">
-                <PredictionForm
-                  :match="match"
-                  :current-prediction="getCurrentPrediction(match.id)"
-                  @success="onPredictionSuccess(match.id)"
-                />
-              </div>
-            </BaseCard>
+              :match="match"
+              :current-prediction="getCurrentPrediction(match.id)"
+              @success="onPredictionSuccess(match.id)"
+            />
           </div>
         </section>
       </template>
@@ -205,33 +194,4 @@ async function onPredictionSuccess(matchId) {
   gap: var(--space-4);
 }
 
-.match-prediction-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  padding: var(--space-6);
-}
-
-.match-section {
-  flex: 1;
-}
-
-.prediction-section {
-  border-top: var(--border-hairline);
-  padding-top: var(--space-6);
-}
-
-@media (min-width: 768px) {
-  .match-prediction-card {
-    flex-direction: row;
-  }
-
-  .prediction-section {
-    border-top: none;
-    border-left: var(--border-hairline);
-    padding-top: 0;
-    padding-left: var(--space-6);
-    min-width: 280px;
-  }
-}
 </style>
