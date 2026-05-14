@@ -11,6 +11,7 @@ const isCreating = ref(false)
 const error = ref('')
 const inviteLink = ref(null)
 const isGeneratingLink = ref(false)
+const copied = ref(false)
 
 async function createBoard() {
   if (!boardName.value.trim()) {
@@ -23,7 +24,6 @@ async function createBoard() {
 
   try {
     const board = await leaderboardService.create(boardName.value.trim())
-    // After creating, generate invite link
     await generateInviteLink(board.id)
   } catch (err) {
     error.value = err.message || 'Failed to create board'
@@ -35,8 +35,10 @@ async function generateInviteLink(boardId) {
   isGeneratingLink.value = true
 
   try {
-    const link = await leaderboardService.generateInviteLink(boardId)
-    inviteLink.value = link
+    const res = await leaderboardService.generateInvite(boardId)
+    const url = `${window.location.origin}/join?token=${res.token}`
+    inviteLink.value = { url, leaderboardId: boardId, expiresAt: res.expires_at }
+    navigator.clipboard.writeText(url).catch(() => {})
   } catch (err) {
     console.error('Failed to generate invite link:', err)
   } finally {
@@ -45,9 +47,22 @@ async function generateInviteLink(boardId) {
   }
 }
 
-function copyLink() {
+async function copyLink() {
   if (!inviteLink.value) return
-  navigator.clipboard.writeText(inviteLink.value.url)
+  await navigator.clipboard.writeText(inviteLink.value.url)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
+}
+
+function formatExpiry(isoString) {
+  const diffMs = new Date(isoString) - Date.now()
+  if (diffMs <= 0) return 'soon'
+  const days = Math.floor(diffMs / 86400000)
+  if (days >= 1) return `in ${days} day${days !== 1 ? 's' : ''}`
+  const hours = Math.floor(diffMs / 3600000)
+  if (hours >= 1) return `in ${hours} hour${hours !== 1 ? 's' : ''}`
+  const mins = Math.round(diffMs / 60000)
+  return `in ${mins} minute${mins !== 1 ? 's' : ''}`
 }
 
 function goToBoard() {
@@ -104,8 +119,8 @@ function goToBoard() {
         <div class="info-box">
           <span class="info-icon">ℹ️</span>
           <div>
-            <strong>Invite links expire in 10 minutes</strong>
-            <p>Signed-out links, regenerate a fresh one whenever you need.</p>
+            <strong>Invite links expire in 7 days</strong>
+            <p>Regenerate a fresh one from the board whenever you need.</p>
           </div>
         </div>
 
@@ -136,15 +151,17 @@ function goToBoard() {
             @click="(e) => e.target.select()"
           />
           <BaseButton @click="copyLink">
-            Copy link
+            {{ copied ? 'Copied!' : 'Copy link' }}
           </BaseButton>
         </div>
+
+        <p class="invite-expiry">Expires {{ formatExpiry(inviteLink.expiresAt) }}</p>
 
         <div class="invite-actions">
           <BaseButton variant="secondary" @click="goToBoard">
             Go to board
           </BaseButton>
-          <BaseButton variant="ghost" @click="$router.push('/leaderboards')">
+          <BaseButton variant="ghost" @click="$router.push('/leaderboards/new')">
             Create another
           </BaseButton>
         </div>
@@ -359,6 +376,13 @@ function goToBoard() {
   border: none;
   outline: none;
   padding: var(--space-2);
+}
+
+.invite-expiry {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .invite-actions {
